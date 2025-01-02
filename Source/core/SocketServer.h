@@ -177,7 +177,7 @@ namespace Core {
                 uint32_t result = Core::ERROR_UNAVAILABLE;
 
                 _lock.Lock();
-
+                printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Submit()->PID<%d><%d>ClientID<%d> \n", getpid(),gettid(), ID);
                 typename ClientMap::iterator index = _clients.find(ID);
 
                 if (index == _clients.end()) {
@@ -213,7 +213,7 @@ namespace Core {
                 Core::ProxyType<HANDLECLIENT> result;
 
                 _lock.Lock();
-
+                printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Client()->PID<%d><%d> clinetID<%d>\n", getpid(), gettid(), ID);
                 typename ClientMap::iterator index = _clients.find(ID);
 
                 if (index != _clients.end()) {
@@ -255,7 +255,7 @@ namespace Core {
             void Cleanup()
             {
                 _lock.Lock();
-
+                printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Cleanup()->PID<%d><%d> _clients.size() =%d \n", getpid(), gettid(), _clients.size());
                 // Check if we can remove closed clients.
                 typename ClientMap::iterator index = _clients.begin();
 
@@ -284,10 +284,12 @@ namespace Core {
             }
             virtual void Accept(SOCKET& newClient, const NodeId& remoteId)
             {
+                printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Accept(newClient, remoteId)->PID<%d><%d> HANDLECLIENT<%s>\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(HANDLECLIENT).name()).Text()).c_str());
                 ProxyType<HANDLECLIENT> client = ProxyType<HANDLECLIENT>::Create(newClient, remoteId, &_parent);
 
                 ASSERT(client.IsValid() == true);
 
+                printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Accept(newClient, remoteId)->PID<%d><%d>client<%s>channelSize<%d> calling client->Open(0)\n", getpid(), gettid(), typeid(client.Origin()).name(), sizeof(client));
                 // What is left, is opening up the socket, make sure the administration is coorect :-)
                 if (client->Open(0) == ERROR_NONE) {
 
@@ -298,6 +300,7 @@ namespace Core {
 
                     while (index != _clients.end()) {
                         if (index->second->IsClosed() == true) {
+                            printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Accept(newClient, remoteId)->PID<%d><%d> calling _clients.erase(index) -remove closed clients\n", getpid(), gettid());
                             index = _clients.erase(index);
                         }
                         else {
@@ -308,6 +311,7 @@ namespace Core {
                     // If the CLient has a method to receive it's Id pass it on..
                     __Id(*client, _nextClient);
 
+                    printf("WPEFramework::Core::SocketServerType<CLIENT>::SocketHandler<HANDLECLIENT>::Accept(newClient, remoteId)->PID<%d><%d>_nextClient<%d> calling _clients.insert()\n", getpid(), gettid(), _nextClient);
                     // A new connection is available, open up a new client
                     _clients.insert(std::pair<uint32_t, ProxyType<HANDLECLIENT>>(_nextClient++, client));
 
@@ -380,6 +384,7 @@ POP_WARNING()
         }
         inline void Cleanup()
         {
+            printf("WPEFramework::Core::SocketServerType<CLIENT>::Cleanup()->PID<%d><%d> calling _handler.Cleanup()\n", getpid(), gettid());
             _handler.Cleanup();
         }
         inline Core::ProxyType<CLIENT> Client(const uint32_t ID)

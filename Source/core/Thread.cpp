@@ -56,6 +56,7 @@ namespace Core {
 #endif
     {
         TRACE_L5("Constructor Thread <%p>", (this));
+        printf("WPEFramework::Core::Thread::Thread()->PID<%d><%d> Constructor Thread\n", getpid(), gettid());
 
 // Create a worker that can do actions in parallel
 #ifdef __WINDOWS__
@@ -108,11 +109,15 @@ namespace Core {
             Core::ToString(threadName, convertedName);
 
             ThreadName(convertedName.c_str());
+            printf("WPEFramework::Core::Thread::Thread()->PID<%d><%d>m_ThreadId<%ld>ThreadName<%s>\n", getpid(), gettid(), m_ThreadId, convertedName.c_str());
         }
+        printf("WPEFramework::Core::Thread::Thread()->PID<%d><%d>m_ThreadId<%ld>\n", getpid(), gettid(), m_ThreadId);
+
     }
     Thread::~Thread()
     {
         TRACE_L5("Destructor Thread <%p>", (this));
+        printf("WPEFramework::Core::Thread::~Thread()->PID<%d><%d> calling Terminate()\n", getpid(), gettid());
 
         Terminate();
     }
@@ -121,6 +126,7 @@ namespace Core {
     void Thread::Signal(const int signal) const
     {
 #ifdef __LINUX__
+       printf("WPEFramework::Core::Thread::Signal()->PID<%d><%d>m_ThreadId<%ld>signal<%d>\n", getpid(), gettid(), m_ThreadId, signal);
        ::pthread_kill(m_hThreadInstance, signal);
 #endif
     }
@@ -155,16 +161,18 @@ POP_WARNING()
 #endif
 
         StateTrigger<thread_state>& stateObject = cClassPointer->m_enumState;
-
+        printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d> calling stateObject.WaitState() \n", getpid(), gettid());
         stateObject.WaitState(INITIALIZED | DEACTIVATE | RUNNING | STOPPED | STOPPING, Core::infinite);
 
         if (((stateObject & (STOPPED | STOPPING)) == 0) && (cClassPointer->Initialize() == Core::ERROR_NONE)) {
             CriticalSection& adminLock = cClassPointer->m_syncAdmin;
 
+            printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d> calling adminLock.Lock() \n", getpid(), gettid());
             // O.K. befor using the state, lock it.
             adminLock.Lock();
 
             if ( (stateObject == INITIALIZED) || (stateObject == DEACTIVATE) ) {
+                printf("WPEFramework::Core::Thread::StartThread((stateObject == INITIALIZED) || (stateObject == DEACTIVATE) )->PID<%d><%d> calling cClassPointer->State(BLOCKED)\n", getpid(), gettid());
                 cClassPointer->State(BLOCKED);
             }
 
@@ -173,6 +181,7 @@ POP_WARNING()
                 unsigned int delayed = Core::infinite;
 
                 if (stateObject == RUNNING) {
+                    printf("WPEFramework::Core::Thread::StartThread(stateObject == RUNNING)->PID<%d><%d><%ld> calling adminLock.Unlock()\n", getpid(), gettid(), cClassPointer->m_hThreadInstance);
                     // O.K. befor using the state, lock it.
                     adminLock.Unlock();
 
@@ -191,41 +200,47 @@ POP_WARNING()
                         }
                     }
                     #else
+                        printf("WPEFramework::Core::Thread::StartThread(stateObject == RUNNING)->PID<%d><%d> calling cClassPointer->Worker()\n", getpid(), gettid());
                         delayed = cClassPointer->Worker();
                     #endif
-
+                    printf("WPEFramework::Core::Thread::StartThread(stateObject == RUNNING)->PID<%d><%d> calling adminLock.Lock()\n", getpid(), gettid());
                     // Change the state, we are done with it.
                     adminLock.Lock();
                 }
 
                 if (stateObject == DEACTIVATE) {
+                    printf("WPEFramework::Core::Thread::StartThread(stateObject == DEACTIVATE)->PID<%d><%d> calling cClassPointer->State(BLOCKED)\n", getpid(), gettid());
                     cClassPointer->State(BLOCKED);
                 }
+                printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d> calling adminLock.Unlock()\n", getpid(), gettid());
                 // O.K. before we wait for a new state unlock the current stuff.
                 adminLock.Unlock();
 
+                printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d>delayed<0x%8x> calling stateObject.WaitState(RUNNING | STOPPED | STOPPING, delayed)\n", getpid(), gettid(), delayed);
                 // Wait till we reach a runnable state
                 stateObject.WaitState(RUNNING | STOPPED | STOPPING, delayed);
-
+                printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d>delayed<0x%8x> calling adminLock.Lock()\n", getpid(), gettid(), delayed);
                 // Change the state, we are done with it.
                 adminLock.Lock();
 
                 // Check in which state we reached the criteria for the WaitState !!
                 if (stateObject == BLOCKED) {
+                    printf("WPEFramework::Core::Thread::StartThread(stateObject == BLOCKED))->PID<%d><%d>delayed<0x%8x> calling cClassPointer->State(RUNNING)\n", getpid(), gettid(), delayed);
                     cClassPointer->State(RUNNING);
                 }
             }
-
+            printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d>delayed<0x%8x> calling adminLock.Unlock()\n", getpid(), gettid());
             // O.K. befor using the state, lock it.
             adminLock.Unlock();
         }
-
+        printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d> calling  cClassPointer->State(STOPPED)\n", getpid(), gettid());
         cClassPointer->State(STOPPED);
-
+        printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d> calling  cClassPointer->m_sigExit.SetEvent()\n", getpid(), gettid());
         // Report that the worker is done by releasing the Signal sync mechanism.
         cClassPointer->m_sigExit.SetEvent();
 
 #ifndef __WINDOWS__
+        printf("WPEFramework::Core::Thread::StartThread()->PID<%d><%d> return \n", getpid(), gettid());
         return (nullptr);
 #else 
         ::ExitThread(0);
@@ -234,6 +249,7 @@ POP_WARNING()
 
     uint32_t Thread::Initialize()
     {
+        printf("WPEFramework::Core::Thread::Initialize()->PID<%d><%d> return \n", getpid(), gettid());
         return (Core::ERROR_NONE);
     }
 
@@ -241,7 +257,7 @@ POP_WARNING()
     {
         // Make sure the thread knows that it should stop.
         m_syncAdmin.Lock();
-
+        printf("WPEFramework::Core::Thread::Terminate()->PID<%d><%d> calling State(STOPPING)\n", getpid(), gettid());
         State(STOPPING);
 
         m_syncAdmin.Unlock();
@@ -263,14 +279,17 @@ POP_WARNING()
 #ifdef __POSIX__
         if (!IsFailed()) {
             void* l_Dummy;
+            printf("WPEFramework::Core::Thread::Terminate()->PID<%d><%d> calling ::pthread_join(m_hThreadInstance, &l_Dummy)\n", getpid(), gettid());
             ::pthread_join(m_hThreadInstance, &l_Dummy);
         }
 #endif
+        printf("WPEFramework::Core::Thread::Terminate()->PID<%d><%d> return \n", getpid(), gettid());
     }
 
     void Thread::Suspend()
     {
 #ifdef __POSIX__
+        printf("WPEFramework::Core::Thread::Suspend()->PID<%d><%d> calling Block() \n", getpid(), gettid());
         Block();
 #else
         State(SUSPENDED);
@@ -280,7 +299,7 @@ POP_WARNING()
     void Thread::Init()
     {
         m_syncAdmin.Lock();
-
+        printf("WPEFramework::Core::Thread::Init()->PID<%d><%d> calling State(INITIALIZED) \n", getpid(), gettid());
         State(INITIALIZED);
 
         m_syncAdmin.Unlock();
@@ -289,7 +308,7 @@ POP_WARNING()
     void Thread::Stop()
     {
         m_syncAdmin.Lock();
-
+        printf("WPEFramework::Core::Thread::Stop()->PID<%d><%d> calling State(STOPPING) \n", getpid(), gettid());
         State(STOPPING);
 
         m_syncAdmin.Unlock();
@@ -298,7 +317,7 @@ POP_WARNING()
     void Thread::Block()
     {
         m_syncAdmin.Lock();
-
+        printf("WPEFramework::Core::Thread::Block()->PID<%d><%d><%ld> calling State(DEACTIVATE) \n", getpid(), gettid(), m_hThreadInstance);
         State(DEACTIVATE);
 
         m_syncAdmin.Unlock();
@@ -307,7 +326,7 @@ POP_WARNING()
     void Thread::Run()
     {
         m_syncAdmin.Lock();
-
+        printf("WPEFramework::Core::Thread::Run()->PID<%d><%d> calling State(RUNNING) \n", getpid(), gettid());
         State(RUNNING);
 
         m_syncAdmin.Unlock();

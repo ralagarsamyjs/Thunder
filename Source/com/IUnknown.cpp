@@ -36,9 +36,11 @@ namespace ProxyStub {
 
         ASSERT(implementation != nullptr);
 
+        printf("WPEFramework::ProxyStub::UnknownStub::Handle()->PID<%d><%d> implementation<%p>index<%d>\n", getpid(), gettid(), implementation, index);
         if (implementation != nullptr) {
             switch (index) {
             case 0: {
+                printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=0)->PID<%d><%d> implementation<%p>index<%d> implementation->AddRef()\n", getpid(), gettid(), implementation, index);
                 // AddRef
                 implementation->AddRef();
                 break;
@@ -47,19 +49,20 @@ namespace ProxyStub {
                 // Release
                 RPC::Data::Frame::Writer response(message->Response().Writer());
                 RPC::Data::Frame::Reader reader(message->Parameters().Reader());
-
+                printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=1)->PID<%d><%d> implementation<%p>index<%d> Release()\n", getpid(), gettid(), implementation, index);
                 // Get the amount of Release we have to do..
                 uint32_t dropReleases(reader.Number<uint32_t>());
                 uint32_t result;
 
                 ASSERT(dropReleases > 0);
-
+                printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=1)->PID<%d><%d> implementation<%p>index<%d> dropReleases<%d> InterfaceId<%d> Release()\n", getpid(), gettid(), implementation, index, dropReleases, InterfaceId());
                 // This is an external referenced interface that we handed out, so it should
                 // be registered. Lets unregister this reference, it is dropped
                 // Dropping the ReceoverSey, if applicable
                 RPC::Administrator::Instance().UnregisterInterface(channel, implementation, InterfaceId(), dropReleases);
 
                 do {
+                   printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=1)->PID<%d><%d> implementation<%p>index<%d> dropReleases<%d> InterfaceId<%d> implementation->Release()\n", getpid(), gettid(), implementation, index, dropReleases, InterfaceId());
                    result = implementation->Release();
                    dropReleases--;
                 } while ((dropReleases != 0) && ((result == Core::ERROR_NONE) || (result == Core::ERROR_COMPOSIT_OBJECT)));
@@ -67,6 +70,7 @@ namespace ProxyStub {
                 ASSERT(dropReleases == 0);
 
                 response.Number<uint32_t>(result);
+                printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=1)->PID<%d><%d> return release() \n", getpid(), gettid());
                 break;
             }
             case 2: {
@@ -75,10 +79,12 @@ namespace ProxyStub {
                 RPC::Data::Frame::Writer response(message->Response().Writer());
                 uint32_t newInterfaceId(reader.Number<uint32_t>());
 
+                printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=2)->PID<%d><%d> implementation<%p>index<%d> InterfaceId<%d> QueryInterface()\n", getpid(), gettid(), implementation, index, InterfaceId());
                 void* newInterface = implementation->QueryInterface(newInterfaceId);
                 response.Number<Core::instance_id>(RPC::instance_cast<void*>(newInterface));
 
                 if (newInterface != nullptr) {
+                    printf("WPEFramework::ProxyStub::UnknownStub::Handle(Index=2)->PID<%d><%d> implementation<%p>index<%d> newInterfaceId<%d> newInterface<%p> QueryInterface()\n", getpid(), gettid(), implementation, index, newInterfaceId, newInterface);
                     RPC::Administrator::Instance().RegisterInterface(channel, newInterface, newInterfaceId);
                 }
 

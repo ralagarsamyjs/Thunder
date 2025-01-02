@@ -379,9 +379,11 @@ namespace Plugin {
                 , _referenceLib(library)
                 , _info(static_cast<const IMetadata*>(metadata)) {
 
+                printf("WPEFramework::Plugin::Metadata<...>::PluginImplementation<...>::PluginImplementation()->PD<%d><%d> ACTUALSERVICE<%s> SERVICE<%s>\n", getpid(), gettid(),(Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str(), (Core::ClassNameOnly(typeid(SERVICE).name()).Text()).c_str());
                 ASSERT(dynamic_cast<const IMetadata*>(metadata) != nullptr);
             }
             ~PluginImplementation() override {
+                printf("WPEFramework::Plugin::Metadata<ACTUALSERVICE>::PluginImplementation<SERVICE>::~PluginImplementation()->PID<%d><%d>\n", getpid(), gettid());
             }
 
         public:
@@ -416,6 +418,7 @@ namespace Plugin {
             // method is called, be aware that the destructor of the object has run
             // to completion!!!
             void Destructed() {
+                printf("WPEFramework::Plugin::Metadata<ACTUALSERVICE>::PluginImplementation<SERVICE>::Destructed()->PID<%d><%d>  Core::ServiceAdministrator::Instance().ReleaseLibrary(std::move(_referenceLib<%s>))\n", getpid(), gettid(), _referenceLib.Name().c_str());
                 Core::ServiceAdministrator::Instance().ReleaseLibrary(std::move(_referenceLib));
             }
 
@@ -449,6 +452,8 @@ namespace Plugin {
             , _control(control) {
             ASSERT(Core::System::ROOT_META_DATA == nullptr);
             Core::System::ROOT_META_DATA = this;
+            printf("WPEFramework::Plugin::Metadata<...>::Metadata()->PID<%d><%d> calling Core::ServiceAdministrator::Instance().Register(this<%s>, _factory<>) \n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str());
+            printf("WPEFramework::Plugin::Metadata<...>::Metadata()->PID<%d><%d> sizeof(_factory)=%d \n", getpid(), gettid(), sizeof(_factory));
             Core::ServiceAdministrator::Instance().Register(this, &_factory);
         }
         ~Metadata() {

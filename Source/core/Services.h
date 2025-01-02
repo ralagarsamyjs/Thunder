@@ -69,9 +69,13 @@ namespace Core {
         public:
             void* Create(const IServiceMetadata* info, const Library& library, const uint32_t interfaceNumber) override {
                 void* result = nullptr;
+                printf("WPEFramework::Core::ServiceAdministrator::ServiceFactoryType<...>::Create()->PID<%d><%d>interfaceNumber<%d> ServiceName<%s>\n", getpid(),gettid(), interfaceNumber, info->ServiceName().c_str());
+                printf("WPEFramework::Core::ServiceAdministrator::ServiceFactoryType<...>::Create()->PID<%d><%d>interfaceNumber<%d> calling Core::ProxyType< SERVICE=%s >::Create()\n", getpid(),gettid(), interfaceNumber, (Core::ClassNameOnly(typeid(SERVICE).name()).Text()).c_str());
                 Core::ProxyType< SERVICE > object = Core::ProxyType< SERVICE >::Create(library, info);
-
+                printf("WPEFramework::Core::ServiceAdministrator::ServiceFactoryType<...>::Create()->PID<%d><%d>interfaceNumber<%d> ending Core::ProxyType< SERVICE=%s >::Create()\n", getpid(),gettid(), interfaceNumber, (Core::ClassNameOnly(typeid(SERVICE).name()).Text()).c_str());
+                
                 if (object.IsValid() == true) {
+                    printf("WPEFramework::Core::ServiceAdministrator::ServiceFactoryType<...>::Create()->PID<%d><%d>interfaceNumber<%d> calling object->QueryInterface(interfaceNumber)\n", getpid(),gettid(), interfaceNumber);
                     // This query interface will increment the refcount of the Service at least to 1.
                     result = object->QueryInterface(interfaceNumber);
                 }
@@ -98,6 +102,7 @@ namespace Core {
     public:
         Library LoadLibrary(const TCHAR libraryName[]) {
             Core::SafeSyncType<Core::CriticalSection> lock(_adminLock);
+            printf("WPEFramework::Core::Library WPEFramework::Core::ServiceAdministrator::LoadLibrary()->PID<%d><%d> calling Library<%s> \n", getpid(), gettid(), libraryName);
             return (Library(libraryName));
         }
         // There is *NO* locking around the _callback pointer. SO this callback 
@@ -105,20 +110,23 @@ namespace Core {
         void Callback(ICallback* callback)
         {
             ASSERT((callback == nullptr) ^ (_callback == nullptr));
+            printf("WPEFramework::Core::ServiceAdministrator::Callback()->PID<%d><%d> _callback = callback\n", getpid(), gettid());
             _callback = callback;
         }
         uint32_t AddRef() const
         {
             Core::InterlockedIncrement(_instanceCount);
+            printf("WPEFramework::Core::ServiceAdministrator::AddRef()->PID<%d><%d>_instanceCount<%d>\n", getpid(), gettid(), _instanceCount);
             return (Core::ERROR_COMPOSIT_OBJECT);
         }
         uint32_t Release() const
         {
             ASSERT(_instanceCount > 0);
-
+            printf("WPEFramework::Core::ServiceAdministrator::Release()->PID<%d><%d> _instanceCount<%d>\n", getpid(), gettid(), _instanceCount);
             Core::InterlockedDecrement(_instanceCount);
 
             if (_callback != nullptr) {
+                printf("WPEFramework::CoreWPEFramework::Core::Service::ServiceAdministrator::Release()->PID<%d><%d> _instanceCount<%d> calling _callback->Destructed() \n", getpid(), gettid(), _instanceCount);
                 _callback->Destructed();
             }
 
@@ -137,6 +145,7 @@ namespace Core {
         template <typename REQUESTEDINTERFACE>
         REQUESTEDINTERFACE* Instantiate(const Library& library, const char name[], const uint32_t version)
         {
+            printf("WPEFramework::Core::ServiceAdministrator::Instantiate()->PID<%d><%d>name<%s> version<%d> REQUESTEDINTERFACE::ID<%d> REQUESTEDINTERFACE=%s\n", getpid(),gettid(), name, version, REQUESTEDINTERFACE::ID, (Core::ClassNameOnly(typeid(REQUESTEDINTERFACE).name()).Text()).c_str());
             void* baseInterface(Instantiate(library, name, version, REQUESTEDINTERFACE::ID));
 
             if (baseInterface != nullptr) {
@@ -162,6 +171,7 @@ namespace Core {
         Service(Args&&... args)
             : ACTUALSERVICE(std::forward<Args>(args)...)
         {
+            printf("WPEFramework::Core::Service<ACTUALSERVICE>::Service()->PID<%d><%d>ACTUALSERVICE<%s>ServiceAdministrator::Instance().AddRef()\n", getpid(),gettid(), (Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str());
             ServiceAdministrator::Instance().AddRef();
         }
 
@@ -172,12 +182,14 @@ namespace Core {
         template <typename INTERFACE, typename... Args>
         static INTERFACE* Create(Args&&... args)
         {
+            printf("WPEFramework::Core::Service<ACTUALSERVICE>::Create()->PID<%d><%d>Core::ProxyType< Service<ACTUALSERVICE> >::Create(ACTUALSERVICE =%s)\n", getpid(),gettid(), (Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str());
             Core::ProxyType< Service<ACTUALSERVICE> > object = Core::ProxyType< Service<ACTUALSERVICE> >::Create(std::forward<Args>(args)...);
-
+            printf("WPEFramework::Core::Service<ACTUALSERVICE>::Create()->PID<%d><%d>Extract<INTERFACE>()\n", getpid(),gettid());
             return (Extract<INTERFACE>(object, TemplateIntToType<std::is_same<ACTUALSERVICE, INTERFACE>::value>()));
         }
         ~Service() override
         {
+            printf("WPEFramework::Core::Service<ACTUALSERVICE>::~Service()->PID<%d><%d>ACTUALSERVICE<%s> calling ServiceAdministrator::Instance().Release()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str());
             ServiceAdministrator::Instance().Release();
         }
 
@@ -185,6 +197,7 @@ namespace Core {
         template <typename INTERFACE>
         inline static INTERFACE* Extract(const Core::ProxyType< Service<ACTUALSERVICE > >& object, const TemplateIntToType<false>&)
         {
+            printf("WPEFramework::Core::Service<...>::Extract()->PID<%d><%d>object->QueryInterface(INTERFACE::ID)\n", getpid(),gettid());
             INTERFACE* result = reinterpret_cast<INTERFACE*>(object->QueryInterface(INTERFACE::ID));
 
             return (result);
@@ -192,6 +205,7 @@ namespace Core {
         template <typename INTERFACE>
         inline static INTERFACE* Extract(const Core::ProxyType< Service<ACTUALSERVICE> >& object, const TemplateIntToType<true>&)
         {
+            printf("WPEFramework::Core::Service<...>::Extract()->PID<%d><%d>object->AddRef()\n", getpid(),gettid());
             object->AddRef();
             return (object.operator->());
         }
@@ -210,11 +224,12 @@ namespace Core {
             : ACTUALSINK(std::forward<Args>(args)...)
             , _referenceCount(0)
         {
+            printf("WPEFramework::Core::Sink<ACTUALSINK>::Sink()->PID<%d><%d> Sink(name=%s) constructor this<%p>\n", getpid(),gettid(), (Core::ClassNameOnly(typeid(ACTUALSINK).name()).Text()).c_str(), this);
         }
         ~Sink()
         {
             REPORT_OUTOFBOUNDS_WARNING(WarningReporting::SinkStillHasReference, _referenceCount);
-
+            printf("WPEFramework::Core::Sink<ACTUALSINK>::~Sink()->PID<%d><%d>\n", getpid(), gettid());
             if (_referenceCount != 0) {
                 // Since this is a Composit of a larger object, it could be that the reference count has
                 // not reached 0. This can happen if a process that has a reference to this SinkType (e.g. 
@@ -238,6 +253,7 @@ namespace Core {
         virtual uint32_t Release() const
         {
             ASSERT (_referenceCount > 0);
+			printf("WPEFramework::Core::Sink<ACTUALSINK>::Release()->PID<%d><%d>\n", getpid(), gettid());
             Core::InterlockedDecrement(_referenceCount);
             return (Core::ERROR_NONE);
         }
@@ -266,6 +282,7 @@ namespace Core {
                 : Service<SERVICE>()
                 , _referenceLib(library)
                 , _info(info) {
+                    printf("WPEFramework::Core::ServiceMetadata<ACTUALSERVICE>::ServiceImplementation()->PID<%d><%d> servicename<%s> constructor\n", getpid(),gettid(), info->ServiceName());
             }
             ~ServiceImplementation() override {
             }
@@ -293,6 +310,7 @@ namespace Core {
             // method is called, be aware that the destructor of the object has run
             // to completion!!!
             void Destructed() {
+                printf("WPEFramework::Core::ServiceMetadata<ACTUALSERVICE>::ServiceImplementation<SERVICE>::Destructed()->PID<%d><%d> ServiceAdministrator::Instance().ReleaseLibrary(_referenceLib<%s>) \n", getpid(), gettid(), _referenceLib.Name().c_str());
                 ServiceAdministrator::Instance().ReleaseLibrary(std::move(_referenceLib));
             }
 
@@ -312,10 +330,14 @@ namespace Core {
             : _version((major << 16) | (minor << 8) | patch)
             , _Id(Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text())
         {
+            printf("WPEFramework::Core::ServiceMetadata<ACTUALSERVICE>::ServiceMetadata()->PID<%d><%d> major<%d><%d><%d> name<%s>\n", getpid(), gettid(), major, minor, patch, (Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str());
+            printf("WPEFramework::Core::ServiceMetadata<ACTUALSERVICE>::ServiceMetadata()->PID<%d><%d> calling Core::ServiceAdministrator::Instance().Register()\n", getpid(), gettid());
             Core::ServiceAdministrator::Instance().Register(this, &_factory);
         }
         ~ServiceMetadata()
         {
+            printf("WPEFramework::Core::ServiceMetadata<ACTUALSERVICE>::~ServiceMetadata()->PID<%d><%d>name<%s>\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALSERVICE).name()).Text()).c_str());
+            printf("WPEFramework::Core::ServiceMetadata<ACTUALSERVICE>::~ServiceMetadata()->PID<%d><%d> calling Core::ServiceAdministrator::Instance().Unregister()\n", getpid(), gettid());
             Core::ServiceAdministrator::Instance().Unregister(this, &_factory);
         }
 

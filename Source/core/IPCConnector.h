@@ -60,7 +60,7 @@ namespace Core {
             {
 
                 ASSERT(_current == nullptr);
-
+                printf("WPEFramework::Core::IMessage::Serializer::Submit()->PID<%d><%d> \n", getpid(), gettid());
                 // TODO: Make sure it is thread safe. The _current needs to
                 // be written as the last parameter so in case the
                 // serialize gets triggered due to another read/write cycle,
@@ -71,7 +71,7 @@ namespace Core {
                 _current = &element;
 
                 ASSERT(_length <= 0x1FFFFFFF);
-
+                printf("WPEFramework::Core::IMessage::Serializer::Submit()->PID<%d><%d> _length<%d>\n", getpid(),gettid(), _length);
                 return (true);
             }
 
@@ -79,15 +79,17 @@ namespace Core {
             uint16_t Serialize(uint8_t stream[], const uint16_t maxLength)
             {
                 uint16_t result = 0;
-
+                printf("WPEFramework::Core::IMessage::Serializer::Serialize()->PID<%d>TID<%d> maxLength<%d>_offset<%d>\n", getpid(), gettid(),maxLength, _offset);
                 while ((_current != nullptr) && (result < maxLength)) {
                     if (_offset < 4) {
                         uint32_t length = _length + CommandSize();
 
+                        printf("WPEFramework::Core::IMessage::Serializer::Serialize()->PID<%d>TID<%d> length<%d> _length<%d>\n", getpid(), gettid(),length, _length);
                         // Write the length. Continue as long as the top bt is active..
                         while ((_offset < 4) && (result < maxLength)) {
                             uint32_t value = length >> (7 * _offset);
                             stream[result] = ((value & 0x7F) | (value >= 0x80 ? 0x80 : 0x00));
+                            printf("WPEFramework::Core::IMessage::Serializer::Serialize()->PID<%d>TID<%d> stream[result(%d)]=%x \n", getpid(),  gettid(), result, stream[result]);
                             result++;
 
                             if (value >= 0x80) {
@@ -102,6 +104,7 @@ namespace Core {
                     while ((_offset < 8) && (result < maxLength)) {
                         uint32_t value = _current->Label() >> (7 * (_offset - 4));
                         stream[result] = ((value & 0x7F) | (value >= 0x80 ? 0x80 : 0x00));
+                        printf("WPEFramework::Core::IMessage::Serializer::Serialize()->PID<%d><%d> stream[result(%d)]=%x \n", getpid(), gettid(),result, stream[result]);
                         result++;
 
                         if (value >= 0x80) {
@@ -114,6 +117,9 @@ namespace Core {
                     if (result < maxLength) {
                         // Write the command, Same structure as length..
                         uint16_t handled = _current->Serialize(&stream[result], maxLength - result, _offset - 8);
+                        for(int i=result; i < handled; i++){
+                            printf("WPEFramework::Core::IMessage::Serializer::Serialize()->PID<%d><%d> stream[result(%d)]=%x \n", getpid(), gettid(), i, stream[i]);
+                        }
 
                         result += handled;
                         _offset += handled;
@@ -123,7 +129,7 @@ namespace Core {
                         if ((_offset - 8) == _length) {
                             const IMessage* ready = _current;
                             _current = nullptr;
-
+                            printf("WPEFramework::Core::IMessage::Serializer::Serialize()->PID<%d><%d> Serialized() \n", getpid(), gettid());
                             // we are done, send out that we copied it all
                             Serialized(*ready);
                         }
@@ -167,7 +173,7 @@ namespace Core {
             uint16_t Deserialize(const uint8_t stream[], const uint16_t maxLength)
             {
                 uint16_t result = 0;
-
+                printf("WPEFramework::Core::IMessage::Deserializer::Deserialize()->PID<%d><%d>maxLength<%d> \n", getpid(), gettid(), maxLength);
                 while (result < maxLength) {
 					if ((_current == nullptr) && (_offset < 8)) {
                         // We have nothing, start by getting the length/command
@@ -191,9 +197,10 @@ namespace Core {
                                 _offset = 8;
                             }
                         }
-
+                        printf("WPEFramework::Core::IMessage::Deserializer::Deserialize()->PID<%d><%d> _length<%d> _label<%d>\n", getpid(), gettid(), _length, _label);
                         if (_offset == 8) {
                             _current = Element(_label);
+                            printf("WPEFramework::Core::IMessage::Deserializer::Deserialize()->PID<%d><%d> _length<%d> _label<%d>\n", getpid(), gettid(),_length, _label);
                             _label = 0;
                         }
                     }
@@ -211,7 +218,9 @@ namespace Core {
                             if (_current != nullptr) {
                                 handled = _current->Deserialize(&stream[result], handled, _offset - 8);
                             }
-
+                            for(int i=result; i < handled; i++){
+                                printf("WPEFramework::Core::IMessage::Deserializer::Deserialize()->PID<%d><%d> stream[result(%d)]=%x \n", getpid(), gettid(), i, stream[i]);
+                            }
                             _offset += handled;
                             result += handled;
                         }
@@ -222,6 +231,7 @@ namespace Core {
                             if (_current != nullptr) {
                                 IMessage* ready = _current;
                                 _current = nullptr;
+                                printf("WPEFramework::Core::IMessage::Deserializer::Deserialize()->PID<%d><%d> calling Deserialized() \n", getpid(), gettid());
                                 Deserialized(*ready);
                             }
                             _offset = 0;
@@ -293,6 +303,7 @@ namespace Core {
                 return (_parent.AddRef());
             }
             uint32_t Release() const override {
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::Release()->PID<%d><%d> \n", getpid(), gettid());
                 return(_parent.Release());
             }
             void Clear()
@@ -317,6 +328,8 @@ namespace Core {
             }
             uint16_t Deserialize(const uint8_t stream[], const uint16_t maxLength, const uint32_t offset) override
             {
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::Deserialize()->PID<%d><%d> \n", getpid(), gettid());
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::Deserialize()->PID<%d><%d> \n", getpid(), gettid());
                 return _Deserialize(stream, maxLength, offset);
             }
 
@@ -364,6 +377,7 @@ namespace Core {
             typename Core::TypeTraits::enable_if<hasSerialize<const SUBJECT, uint16_t, uint8_t[], const uint16_t, const uint32_t>::value, uint16_t>::type
             _Serialize(uint8_t stream[], const uint16_t maxLength, const uint32_t offset) const
             {
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::_Serialize()->PID<%d>TID<%d> calling _package.Serialize() \n", getpid(), gettid());
                 return (_package.Serialize(stream, maxLength, offset));
             }
 
@@ -373,7 +387,7 @@ namespace Core {
             {
                 uint16_t result = 0;
                 uint32_t packageLength = _Length();
-
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::_Serialize()->PID<%d>TID<%d> calling memcpy() \n", getpid(), gettid());
                 if (offset < packageLength) {
                     result = ((maxLength > (packageLength - offset)) ? (packageLength - offset) : maxLength);
                     ::memcpy(stream, &(reinterpret_cast<const uint8_t*>(&_package)[offset]), result);
@@ -387,6 +401,7 @@ namespace Core {
             typename Core::TypeTraits::enable_if<hasDeserialize<SUBJECT, uint16_t, const uint8_t[], const uint16_t, const uint32_t>::value, uint16_t>::type
             _Deserialize(const uint8_t stream[], const uint16_t maxLength, const uint32_t offset)
             {
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::_Deserialize()->PID<%d><%d> \n", getpid(), gettid());
                 return (_package.Deserialize(stream, maxLength, offset));
             }
 
@@ -400,6 +415,7 @@ namespace Core {
                     result = (maxLength > static_cast<uint16_t>(sizeof(SUBJECT) - offset) ? static_cast<uint16_t>(sizeof(SUBJECT) - offset) : maxLength);
                     ::memcpy(&(reinterpret_cast<uint8_t*>(&_package)[offset]), stream, result);
                 }
+                printf("WPEFramework::Core::IPCMessageType<...>::RawSerializedType<...>::ThisClass::_Deserialize(memcpy)->PID<%d><%d> result<%d>\n", getpid(), gettid(),result);
                 return (result);
             }
 
@@ -485,7 +501,7 @@ POP_WARNING()
             void Factory(Core::ProxyType<FactoryType<IIPC, uint32_t>>& factory)
             {
                 ASSERT((_factory.IsValid() == false) && (factory.IsValid() == true));
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::Factory()->PID<%d><%d>  _factory = factory \n", getpid(), gettid());
                 _factory = factory;
             }
 
@@ -501,6 +517,7 @@ POP_WARNING()
                 , _factory(factory)
                 , _handlers()
             {
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::IPCFactory()->PID<%d><%d> _factory(factory)\n", getpid(), gettid());
                 // Only creat the IPCFactory with a valid base factory
                 ASSERT(factory.IsValid());
             }
@@ -528,6 +545,7 @@ POP_WARNING()
 				ASSERT(handler.IsValid() == true);
                 ASSERT(_handlers.find(id) == _handlers.end());
 
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::Register(_handlers)->PID<%d><%d> Handler-Id<%d>\n", getpid(), gettid(), id);
                 _handlers.insert(std::pair<uint32_t, ProxyType<IIPCServer>>(id, handler));
 
                 _lock.Unlock();
@@ -540,7 +558,7 @@ POP_WARNING()
                 std::map<uint32_t, ProxyType<IIPCServer>>::iterator index(_handlers.find(id));
 
                 ASSERT(index != _handlers.end());
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::Unregister(_handlers)->PID<%d><%d> Handler-Id<%d>\n", getpid(), gettid(), id);
                 if (index != _handlers.end()) {
                     _handlers.erase(index);
                 }
@@ -550,6 +568,7 @@ POP_WARNING()
 
             bool InProgress() const
             {
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::InProgress()->PID<%d><%d> _outbound.IsValid<%d> \n", getpid(), gettid(), _outbound.IsValid());
                 return (_outbound.IsValid());
             }
 
@@ -559,20 +578,23 @@ POP_WARNING()
                 uint32_t searchIdentifier(identifier >> 1);
 
                 _lock.Lock();
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::Element()->PID<%d><%d> identifier<%d>\n", getpid(), gettid(),identifier);    
                 if (identifier & 0x01) {
+                    printf("WPEFramework::Core::IPCChannel::IPCFactory::Element()->PID<%d><%d> identifier & 0x01 \n", getpid(), gettid());    
                     if ((_outbound.IsValid() == true) && (_outbound->Label() == searchIdentifier)) {
+                        printf("WPEFramework::Core::IPCChannel::IPCFactory::Element()->PID<%d><%d> calling _outbound->IResponse() \n", getpid(), gettid());    
                         result = _outbound->IResponse();
                     } else {
                         TRACE_L1("Unexpected response message for ID [%d].\n", searchIdentifier);
                     }
                 } else {
                     ASSERT(_inbound.IsValid() == false);
-
+                    printf("WPEFramework::Core::IPCChannel::IPCFactory::Element()->PID<%d><%d> ! (identifier & 0x01) searchIdentifier<%d> \n", getpid(), gettid(), searchIdentifier);    
                     ProxyType<IIPC> rpcCall(_factory->Element(searchIdentifier));
 
                     if (rpcCall.IsValid() == true) {
                         _inbound = rpcCall;
+                        printf("WPEFramework::Core::IPCChannel::IPCFactory::Element()->PID<%d><%d> _inbound = rpcCall calling rpcCall->IParameters()\n", getpid(), gettid());    
                         result = rpcCall->IParameters();
                     } else {
                         TRACE_L1("No RPC method definition for ID [%d].\n", searchIdentifier);
@@ -580,7 +602,7 @@ POP_WARNING()
                 }
 
                 _lock.Unlock();
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::Element()->PID<%d><%d> result->Label<%d> result->Length<%d>\n", getpid(), gettid(), result->Label(), result->Length());    
                 return (result);
             }
 
@@ -607,14 +629,15 @@ POP_WARNING()
                 ProxyType<IIPCServer> procedure;
 
                 _lock.Lock();
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::ReceivedMessage()->PID<%d><%d>\n", getpid(), gettid());
                 if ((_outbound.IsValid() == true) && (_outbound->IResponse() == rhs)) {
 
                     ASSERT(_callback != nullptr);
-
+                    printf("WPEFramework::Core::IPCChannel::IPCFactory::ReceivedMessage(_outbound.IsValid() == true && _outbound->IResponse() == rhs)->PID<%d><%d> \n", getpid(), gettid());
                     ProxyType<IIPC> handledObject(_outbound);
 
                     _outbound.Release();
+                    printf("WPEFramework::Core::IPCChannel::IPCFactory::ReceivedMessage(_outbound.IsValid() == true && _outbound->IResponse() == rhs)->PID<%d><%d> calling  _callback->Dispatch(*handledObject) \n", getpid(), gettid());
                     _callback->Dispatch(*handledObject);
                     _callback = nullptr;
                 }
@@ -624,21 +647,21 @@ POP_WARNING()
                     std::map<uint32_t, ProxyType<IIPCServer>>::iterator index(_handlers.find(_inbound->Label()));
 
 					ASSERT(index != _handlers.end());
-
+                    printf("WPEFramework::Core::IPCChannel::IPCFactory::ReceivedMessage(_inbound.IsValid() == true)->PID<%d><%d> calling Iterate and _handlers.end() \n", getpid(), gettid());
                     if (index != _handlers.end()) {
                         procedure = (*index).second;
                         inbound = _inbound;
                     } else {
                         TRACE_L1("No handler defined to handle the incoming frames. [%d]", _inbound->Label());
                     }
-
+                    printf("WPEFramework::Core::IPCChannel::IPCFactory::ReceivedMessage(_inbound.IsValid() == true)->PID<%d><%d> _inbound.Release() \n", getpid(), gettid());
                     _inbound.Release();
                 } else {
                     ASSERT(false && "Received something that is neither an inbound nor on outbound!!!");
                 }
 
                 _lock.Unlock();
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::ReceivedMessage()->PID<%d> return procedure\n", getpid());
                 return (procedure);
             }
 
@@ -648,7 +671,7 @@ POP_WARNING()
 
                 ASSERT((outbound.IsValid() == true) && (callback != nullptr));
                 ASSERT((_outbound.IsValid() == false) && (_callback == nullptr));
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::SetOutbound()->PID<%d><%d> _outbound = outbound _callback = callback\n", getpid(), gettid());
                 _outbound = outbound;
                 _callback = callback;
 
@@ -660,7 +683,7 @@ POP_WARNING()
                 bool result = false;
 
                 _lock.Lock();
-
+                printf("WPEFramework::Core::IPCChannel::IPCFactory::AbortOutbound()->PID<%d><%d> \n", getpid(), gettid());
                 if (_outbound.IsValid() == true) {
 
                     result = true;
@@ -699,6 +722,7 @@ POP_WARNING()
         void Factory(Core::ProxyType<FactoryType<IIPC, uint32_t>>& factory)
         {
             ASSERT(_customData == nullptr);
+            printf("WPEFramework::Core::IPCChannel::Factory()->PID<%d><%d> calling _administration.Factory(factory)\n", getpid(), gettid());
             _administration.Factory(factory);
         }
 
@@ -719,34 +743,41 @@ POP_WARNING()
         }
         void Register(const uint32_t id, const ProxyType<IIPCServer>& handler)
         {
+            printf("WPEFramework::Core::IPCChannel::Register()->PID<%d><%d> calling _administration.Register(id, handler)\n", getpid(), gettid());
             _administration.Register(id, handler);
         }
 
         void Unregister(const uint32_t id)
         {
+            printf("WPEFramework::Core::IPCChannel::Unregister()->PID<%d><%d> calling _administration.Unregister(id, handler)\n", getpid(), gettid());
             _administration.Unregister(id);
         }
 
         void Abort()
         {
+            printf("WPEFramework::Core::IPCChannel::Abort()->PID<%d><%d> calling _administration.AbortOutbound(id, handler)\n", getpid(), gettid());
             _administration.AbortOutbound();
         }
         template <typename ACTUALELEMENT>
         uint32_t Invoke(const ProxyType<ACTUALELEMENT>& command, IDispatchType<IIPC>* completed)
         {
+            printf("WPEFramework::Core::IPCChannel::Invoke(command, complete)->PID<%d><%d> ACTUALELEMENT<%s> calling Execute(Core::ProxyType<IIPC>(command), completed)\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALELEMENT).name()).Text()).c_str());
             return (Execute(Core::ProxyType<IIPC>(command), completed));
         }
         template <typename ACTUALELEMENT>
         uint32_t Invoke(const ProxyType<ACTUALELEMENT>& command, const uint32_t waitTime)
         {
+            printf("WPEFramework::Core::IPCChannel::Invoke(command, waitTime)->PID<%d><%d> ACTUALELEMENT<%s> calling Execute(Core::ProxyType<IIPC>(command), waitTime)\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALELEMENT).name()).Text()).c_str());
             return (Execute(Core::ProxyType<IIPC>(command), waitTime));
         }
         uint32_t Invoke(const ProxyType<Core::IIPC>& command, IDispatchType<IIPC>* completed)
         {
+            printf("WPEFramework::Core::IPCChannel::Invoke(command, waitTime)->PID<%d><%d> calling Execute(Core::ProxyType<IIPC>(command), completed)\n", getpid(), gettid());
             return (Execute(command, completed));
         }
         uint32_t Invoke(const ProxyType<Core::IIPC>& command, const uint32_t waitTime)
         {
+            printf("WPEFramework::Core::IPCChannel::Invoke(command, waitTime)->PID<%d><%d> calling Execute(Core::ProxyType<IIPC>(command), completed)\n", getpid(), gettid());
             return (Execute(command, waitTime));
         }
 
@@ -798,6 +829,7 @@ POP_WARNING()
             {
                 ASSERT(inbound.IsValid() == true);
 
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCLink::SendResponse()->PID<%d> calling BaseClass::Submit()\n", getpid());
                 // This is an inbound call, Report what we have processed !!!
                 return (BaseClass::Submit(inbound->IResponse()));
             }
@@ -807,9 +839,11 @@ POP_WARNING()
             {
 
                 Core::ProxyType<IIPC> inbound;
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCLink::Received()->PID<%d> Label<%d> calling handler()\n", getpid(), message->Label());
                 ProxyType<IIPCServer> handler(_factory.ReceivedMessage(message, inbound));
 
                 if (handler.IsValid() == true) {
+                    printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCLink::Received()->PID<%d> calling _parent.CallProcedure(handler, inbound)\n", getpid());
                     _parent.CallProcedure(handler, inbound);
                 }
             }
@@ -823,12 +857,13 @@ POP_WARNING()
             // Notification of a channel state change..
             void StateChange() override
             {
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCLink::StateChange()->PID<%d><%d>\n", getpid(),gettid());
                 if (_parent.Source().IsOpen() == false) {
                     // Whatever s hapening, Flush what we were doing..
                     _parent.Abort();
                     _factory.Flush();
                 }
-
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCLink::StateChange()->PID<%d><%d> calling _parent.StateChange()\n", getpid(), gettid());
                 _parent.StateChange();
             }
 
@@ -853,20 +888,22 @@ POP_WARNING()
             uint32_t Wait(const uint32_t waitTime)
             {
                 uint32_t result = Core::ERROR_NONE;
-
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCTrigger::Wait()->PID<%d><%d>waitTime<%d> ACTUALSOURCE<%s>\n", getpid(), gettid(), waitTime, (Core::ClassNameOnly(typeid(ACTUALSOURCE).name()).Text()).c_str());
                 // Now we wait for ever, to get a signal that we are done :-)
                 if (_signal.Lock(waitTime) != Core::ERROR_NONE) {
                     _administration.AbortOutbound();
-
+                    printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCTrigger::Wait()->PID<%d><%d> Core::ERROR_TIMEDOUT \n", getpid(), gettid());
                     result = Core::ERROR_TIMEDOUT;
                 } else if (_administration.AbortOutbound() == true) {
+                    printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCTrigger::Wait()->PID<%d><%d> Core::ERROR_ASYNC_FAILED \n", getpid(), gettid());
                     result = Core::ERROR_ASYNC_FAILED;
                 }
-
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCTrigger::Wait()->PID<%d><%d> return \n", getpid(), gettid());
                 return (result);
             }
             void Dispatch(IIPC& /* element */) override
             {
+                printf("WPEFramework::Core::IPCChannelType<ACTUALSOURCE, EXTENSION>::IPCTrigger::Dispatch()->PID<%d><%d> ACTUALSOURCE<%s> calling _signal.SetEvent() \n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALSOURCE).name()).Text()).c_str());
                 _signal.SetEvent();
             }
 
@@ -953,7 +990,7 @@ POP_WARNING()
             uint32_t success = Core::ERROR_UNAVAILABLE;
 
             _serialize.Lock();
-
+            printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, complete)->PID<%d><%d> \n", getpid(), gettid());
             if (_administration.InProgress() == true) {
                 success = Core::ERROR_INPROGRESS;
             } else if (_link.IsOpen() == true) {
@@ -961,6 +998,8 @@ POP_WARNING()
                 // proxy casted objects.
                 _administration.SetOutbound(command, completed);
 
+                printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, complete)->PID<%d><%d> label<%d>\n", getpid(),gettid(),command->Label());
+                printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, complete)->PID<%d><%d> _calling link.Submit()\n", getpid(), gettid());
                 // Send out the
                 _link.Submit(command->IParameters());
 
@@ -976,17 +1015,21 @@ POP_WARNING()
             uint32_t success = Core::ERROR_CONNECTION_CLOSED;
 
             _serialize.Lock();
+            printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, waitTime)->PID<%d><%d> \n", getpid(), gettid());
 
             if (_link.IsOpen() == true) {
                 IPCTrigger sink(_administration);
 
+                printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, waitTime)->PID<%d><%d> calling _administration.SetOutbound()\n", getpid(), gettid());
                 // We need to accept a CONST object to avoid an additional object creation
                 // proxy casted objects.
                 _administration.SetOutbound(command, &sink);
 
+                printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, waitTime)->PID<%d><%d> calling _link.Submit(command->IParameters()\n", getpid(), gettid());
                 // Send out the
                 _link.Submit(command->IParameters());
 
+                printf("WPEFramework::Core::IPCChannelType<...>::Execute(command, waitTime)->PID<%d><%d> calling sink.Wait()\n", getpid(), gettid());
                 success = sink.Wait(waitTime);
             }
 
@@ -996,6 +1039,7 @@ POP_WARNING()
         }
         void CallProcedure(ProxyType<IIPCServer>& procedure, ProxyType<IIPC>& message)
         {
+            printf("WPEFramework::Core::IPCChannelType<...>::CallProcedure()->PID<%d><%d>IIPCServer<%s> IIPC<%s>\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(IIPCServer).name()).Text()).c_str(), (Core::ClassNameOnly(typeid(IIPC).name()).Text()).c_str());
             procedure->Procedure(*this, message);
         }
 

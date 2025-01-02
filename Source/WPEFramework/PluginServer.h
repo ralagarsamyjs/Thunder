@@ -126,6 +126,7 @@ namespace PluginHost {
                 : Core::WorkerPool(THREADPOOL_COUNT, stackSize, 8 * THREADPOOL_COUNT, &_dispatch, this)
                 , _dispatch()
             {
+                printf("WPEFramework::PluginHost::Server::WorkerPoolImplementation::WorkerPoolImplementation()->PID<%d><%d> Threadcount<%d> stacksize<%d>\n", getpid(), gettid(), THREADPOOL_COUNT, stackSize);
                 Run();
             }
             ~WorkerPoolImplementation() override = default;
@@ -422,6 +423,7 @@ namespace PluginHost {
                         result = source->Model();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Model()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! Background: If enabled, the PluginHost is running in daemon mode
@@ -432,6 +434,7 @@ namespace PluginHost {
                         result = source->Background();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Background()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 //! Accessor: Identifier that can be used for Core:NodeId to connect to the webbridge.
@@ -442,6 +445,7 @@ namespace PluginHost {
                         result = source->Accessor();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Accessor()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! WebPrefix: First part of the pathname in the HTTP request to select the webbridge components.
@@ -452,6 +456,7 @@ namespace PluginHost {
                         result = source->WebPrefix();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::WebPrefix()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! Locator: The name of the binary (so) that holds the given ClassName code.
@@ -462,6 +467,7 @@ namespace PluginHost {
                         result = source->Locator();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Locator()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! ClassName: Name of the class to be instantiated for this IShell
@@ -472,6 +478,7 @@ namespace PluginHost {
                         result = source->ClassName();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::ClassName()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());                    
                     return (result);
                 }
                 //! Versions: Returns a JSON Array of versions (JSONRPC interfaces) supported by this plugin.
@@ -482,10 +489,12 @@ namespace PluginHost {
                         result = source->Versions();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Versions()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! Callsign: Instantiation name of this specific plugin. It is the name given in the config for the classname.
                 string Callsign() const override {
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Callsign()->PID<%d><%d> _callsign<%s>\n", getpid(), gettid(), _callsign.c_str());
                     return (_callsign);
                 }
                 //! PersistentPath: <config:persistentpath>/<plugin:callsign>/
@@ -496,6 +505,7 @@ namespace PluginHost {
                         result = source->PersistentPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::PersistentPath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! VolatilePath: <config:volatilepath>/<plugin:callsign>/
@@ -506,6 +516,7 @@ namespace PluginHost {
                         result = source->VolatilePath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::VolatilePath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! DataPath: <config:datapath>/<plugin:classname>/
@@ -516,6 +527,7 @@ namespace PluginHost {
                         result = source->DataPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::DataPath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! ProxyStubPath: <config:proxystubpath>/
@@ -526,6 +538,7 @@ namespace PluginHost {
                         result = source->ProxyStubPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::ProxyStubPath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! SystemPath: <config:systempath>/
@@ -536,6 +549,7 @@ namespace PluginHost {
                         result = source->SystemPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::SystemPath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! SystemPath: <config:apppath>/Plugins/
@@ -546,6 +560,7 @@ namespace PluginHost {
                         result = source->PluginPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::PluginPath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! SystemPath: <config:systemrootpath>/
@@ -556,6 +571,7 @@ namespace PluginHost {
                         result = source->SystemRootPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::SystemRootPath()->PID<%d><%d> result<%s>\n", getpid(), gettid(), result.c_str());
                     return (result);
                 }
                 //! SystemRootPath: Set <config:systemrootpath>/
@@ -566,6 +582,7 @@ namespace PluginHost {
                         result = source->SystemRootPath(systemRootPath);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::SystemRootPath()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 //! Startup: <config:startup>/
@@ -576,6 +593,7 @@ namespace PluginHost {
                         result = source->Startup();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Startup()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 //! Startup: Set<startup,autostart,resumed states>/
@@ -586,6 +604,7 @@ namespace PluginHost {
                         result = source->Startup(value);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Startup()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 //! Substituted Config value
@@ -596,6 +615,7 @@ namespace PluginHost {
                         result = source->Substitute(input);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Substitute()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 bool Resumed() const override {
@@ -605,6 +625,7 @@ namespace PluginHost {
                         result = source->Resumed();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Resumed()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 uint32_t Resumed(const bool value) override {
@@ -614,6 +635,7 @@ namespace PluginHost {
                         result = source->Resumed(value);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Resumed()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 string HashKey() const override {
@@ -632,6 +654,7 @@ namespace PluginHost {
                         result = source->SystemRootPath();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::ConfigLine()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 uint32_t ConfigLine(const string& config) override {
@@ -641,6 +664,7 @@ namespace PluginHost {
                         result = source->ConfigLine(config);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::ConfigLine()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 //! Return whether the given version is supported by this IShell instance.
@@ -651,6 +675,7 @@ namespace PluginHost {
                         result = source->IsSupported(version);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::IsSupported()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 // Get access to the SubSystems and their corrresponding information. Information can be set or get to see what the
@@ -662,6 +687,7 @@ namespace PluginHost {
                         result = source->SubSystems();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::SubSystems()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 // Notify all subscribers of this service with the given string.
@@ -673,6 +699,7 @@ namespace PluginHost {
                         source->Notify(message);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Notify()->PID<%d><%d>\n", getpid(), gettid());
                 }
                 // Allow access to the Shells, configured for the different Plugins found in the configuration.
                 // Calling the QueryInterfaceByCallsign with an empty callsign will query for interfaces located
@@ -683,6 +710,7 @@ namespace PluginHost {
                         source->Register(sink);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Register()->PID<%d><%d>\n", getpid(), gettid());
                 }
                 void Unregister(IPlugin::INotification* sink) override {
                     PluginHost::IShell* source = Source();
@@ -690,6 +718,7 @@ namespace PluginHost {
                         source->Unregister(sink);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Unregister()->PID<%d><%d>\n", getpid(), gettid());
                 }
                 state State() const override {
                     state result = state::DEACTIVATED;
@@ -698,6 +727,7 @@ namespace PluginHost {
                         result = source->State();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::State()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 void* /* @interface:id */ QueryInterfaceByCallsign(const uint32_t id, const string& name) override {
@@ -718,6 +748,7 @@ namespace PluginHost {
                         result = source->Activate(why);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Activate()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 uint32_t Deactivate(const reason why) override {
@@ -727,6 +758,7 @@ namespace PluginHost {
                         result = source->Deactivate(why);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Deactivate()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 uint32_t Unavailable(const reason why) override {
@@ -736,6 +768,7 @@ namespace PluginHost {
                         result = source->Unavailable(why);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Unavailable()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 uint32_t Hibernate(const uint32_t timeout) override {
@@ -745,6 +778,7 @@ namespace PluginHost {
                         result = source->Hibernate(timeout);
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Hibernate()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 reason Reason() const override {
@@ -754,6 +788,7 @@ namespace PluginHost {
                         result = source->Reason();
                         source->Release();
                     }
+                    printf("WPEFramework::PluginHost::Server::CompositPlugin::ShellProxy::Reason()->PID<%d><%d>\n", getpid(), gettid());
                     return (result);
                 }
                 Core::hresult Metadata(string& info /* @out */) const {
@@ -1222,6 +1257,7 @@ namespace PluginHost {
                 , _external(PluginNodeId(server, plugin), server.ProxyStubPath(), handler)
                 , _administrator(administrator)
             {
+                printf("WPEFramework::PluginHost::Server::Service::Service()->PID<%d><%d> \n", getpid(), gettid());
             }
             ~Service() override
             {
@@ -1377,12 +1413,13 @@ namespace PluginHost {
             inline Core::ProxyType<Web::Response> Evaluate(const Request& request)
             {
                 Core::ProxyType<Web::Response> result;
-
+                printf("WPEFramework::PluginHost::Server::Service::Evaluate()->PID<%d><%d>\n", getpid(), gettid());
                 Lock();
 
                 if (IsActive() == false) {
                     result = _unavailableHandler;
                 } else if (IsWebServerRequest(request.Path) == true) {
+                    printf("WPEFramework::PluginHost::Server::Service::Evaluate()->PID<%d><%d>calling IsWebServerRequest() return\n", getpid(), gettid());
                     result = IFactories::Instance().Response();
                     FileToServe(request.Path, *result, false);
                 } else if (request.Verb == Web::Request::HTTP_OPTIONS) {
@@ -1390,6 +1427,7 @@ namespace PluginHost {
                     result = IFactories::Instance().Response();
 
                     TRACE_L1("Filling the Options on behalf of: %s", request.Path.c_str());
+                    printf("WPEFramework::PluginHost::Server::Service::Evaluate()->PID<%d><%d>Filling the Options on behalf< %s> return\n", getpid(), gettid(), request.Path.c_str());
 
                     result->ErrorCode = Web::STATUS_NO_CONTENT;
                     result->Message = _T("No Content"); // Core::EnumerateType<Web::WebStatus>(_optionResponse->ErrorCode).Text();
@@ -1407,17 +1445,18 @@ namespace PluginHost {
                 }
 
                 Unlock();
-
+                printf("WPEFramework::PluginHost::Server::Service::Evaluate()->PID<%d><%d> return \n", getpid(), gettid());
                 return (result);
             }
             inline Core::ProxyType<Web::Response> Process(const Web::Request& request)
             {
                 Core::ProxyType<Web::Response> result;
-
+                printf("WPEFramework::PluginHost::Server::Service::Process()->PID<%d><%d>\n", getpid(), gettid());
                 Lock();
 
                 if ((_webRequest != nullptr) && (IsActive() == true)) {
                     IWeb* service(_webRequest);
+                    printf("WPEFramework::PluginHost::Server::Service::Process()->PID<%d><%d>request<%p>\n", getpid(), gettid(),_webRequest);
                     service->AddRef();
                     Unlock();
 
@@ -1425,6 +1464,7 @@ namespace PluginHost {
                     IncrementProcessedRequests();
 #endif
                     Core::InterlockedIncrement(_activity);
+                    printf("WPEFramework::PluginHost::Server::Service::Process()->PID<%d><%d>calling service->Process(request)\n", getpid(), gettid());
                     result = service->Process(request);
                     Core::InterlockedDecrement(_activity);
 
@@ -1440,6 +1480,7 @@ namespace PluginHost {
                 Core::ProxyType<Core::JSONRPC::Message> response;
 
                 Lock();
+                printf("WPEFramework::PluginHost::Server::Service::Invoke()->PID<%d><%d> \n", getpid(), gettid());
 
                 if ( (_jsonrpc == nullptr) || (IsActive() == false) ) {
                     Unlock();
@@ -1493,6 +1534,7 @@ namespace PluginHost {
                     }
                     else {
                         string output;
+                        printf("WPEFramework::PluginHost::Server::Service::Invoke()->PID<%d><%d> calling _jsonrpc->Invoke()\n", getpid(), gettid());
                         result = _jsonrpc->Invoke(channelId, message.Id.Value(), token, method, message.Parameters.Value(), output);
 
                         if (response.IsValid() == true) {
@@ -1718,27 +1760,31 @@ namespace PluginHost {
             void* Instantiate(const RPC::Object& object, const uint32_t waitTime, uint32_t& sessionId) override
             {
                 ASSERT(_connection == nullptr);
-
+                printf("WPEFramework::PluginHost::Server::Service::Instantiate()->PID<%d><%d> calling _administrator.Instantiate() \n", getpid(), gettid());
                 void* result(_administrator.Instantiate(object, waitTime, sessionId, DataPath(), PersistentPath(), VolatilePath()));
-
+                printf("WPEFramework::PluginHost::Server::Service::Instantiate()->PID<%d><%d> calling _administrator.RemoteConnection() \n", getpid(), gettid());
                 _connection = _administrator.RemoteConnection(sessionId);
 
                 return (result);
             }
             void Register(RPC::IRemoteConnection::INotification* sink) override
             {
+                printf("WPEFramework::PluginHost::Server::Service::Register(RPC::IRemoteConnection::INotification* sink)->PID<%d><%d> calling _administrator.Register(sink)\n", getpid(), gettid());
                 _administrator.Register(sink);
             }
             void Unregister(const RPC::IRemoteConnection::INotification* sink) override
             {
+                printf("WPEFramework::PluginHost::Server::Service::Unregister(RPC::IRemoteConnection::INotification* sink)->PID<%d><%d> calling _administrator.Unregister(sink)\n", getpid(), gettid());
                 _administrator.Unregister(sink);
             }
             void Register(IShell::ICOMLink::INotification* sink)
             {
+                printf("WPEFramework::PluginHost::Server::Service::Register(IShell::ICOMLink::INotification* sink)->PID<%d><%d> calling _administrator.Register(sink)\n", getpid(), gettid());
                 _administrator.Register(sink);
             }
             void Unregister(IShell::ICOMLink::INotification* sink)
             {
+                printf("WPEFramework::PluginHost::Server::Service::Unregister(IShell::ICOMLink::INotification* sink)->PID<%d><%d> calling _administrator.Unregister(sink)\n", getpid(), gettid());
                 _administrator.Unregister(sink);
             }
             RPC::IRemoteConnection* RemoteConnection(const uint32_t connectionId) override
@@ -1837,6 +1883,7 @@ namespace PluginHost {
                 std::vector<string> all_paths = GetLibrarySearchPaths(name);
                 std::vector<string>::const_iterator iter = std::begin(all_paths);
 
+                printf("WPEFramework::Core::Library WPEFramework::PluginHost::Server::Service::LoadLibrary()->PID<%d><%d> name<%s>\n", getpid(), gettid(), name.c_str());
                 while ( (iter != std::end(all_paths)) && (progressedState <= 2) ) {
                     Core::File libraryToLoad(*iter);
 
@@ -1844,7 +1891,7 @@ namespace PluginHost {
                         if (progressedState == 0) {
                             progressedState = 1;
                         }
-
+                        printf("WPEFramework::Core::Library WPEFramework::PluginHost::Server::Service::LoadLibrary()->PID<%d><%d> name<%s> Core::ServiceAdministrator::Instance().LoadLibrary\n", getpid(), gettid(), name.c_str());
                         // Loading a library, in the static initializers, might register Service::MetaData structures. As
                         // the dlopen has a process wide system lock, make sure that the, during open used lock of the 
                         // ServiceAdministrator, is already taken before entering the dlopen. This can only be achieved
@@ -1856,15 +1903,20 @@ namespace PluginHost {
                                 progressedState = 2;
                             }
 
+                            printf("WPEFramework::Core::Library WPEFramework::PluginHost::Server::Service::LoadLibrary()->PID<%d><%d> name<%s> newLib.IsLoaded() == true \n", getpid(), gettid(), name.c_str());
+
                             Core::System::ModuleBuildRefImpl moduleBuildRef = reinterpret_cast<Core::System::ModuleBuildRefImpl>(newLib.LoadFunction(_T("ModuleBuildRef")));
                             Core::System::ModuleServiceMetadataImpl moduleServiceMetadata = reinterpret_cast<Core::System::ModuleServiceMetadataImpl>(newLib.LoadFunction(_T("ModuleServiceMetadata")));
                             if ((moduleBuildRef != nullptr) && (moduleServiceMetadata != nullptr)) {
                                 result = newLib;
                                 progressedState = 3;
                                 if (_metadata.IsValid() == false) {
+                                    printf("WPEFramework::Core::Library WPEFramework::PluginHost::Server::Service::LoadLibrary()->PID<%d><%d> name<%s> moduleServiceMetadata() \n", getpid(), gettid(), name.c_str());
                                     _metadata = moduleServiceMetadata();
                                     if (_metadata.IsValid() == true) {
+                                        printf("WPEFramework::Core::Library WPEFramework::PluginHost::Server::Service::LoadLibrary()->PID<%d><%d> name<%s> _precondition.Load(_metadata.Precondition()) \n", getpid(), gettid(), name.c_str());
                                         _precondition.Load(_metadata.Precondition());
+                                        printf("WPEFramework::Core::Library WPEFramework::PluginHost::Server::Service::LoadLibrary()->PID<%d><%d> name<%s> _termination.Load(_metadata.Termination())) \n", getpid(), gettid(), name.c_str());
                                         _termination.Load(_metadata.Termination());
                                     }
                                     _metadata.Hash(moduleBuildRef());
@@ -1893,6 +1945,7 @@ namespace PluginHost {
             {
                 ASSERT((State() == DEACTIVATED) || (State() == PRECONDITION));
 
+                printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> \n", getpid(), gettid());
                 IPlugin* newIF = nullptr;
                 const string locator(PluginHost::Service::Configuration().Locator.Value());
                 const string classNameString(PluginHost::Service::Configuration().ClassName.Value());
@@ -1900,17 +1953,21 @@ namespace PluginHost {
                 uint32_t version(static_cast<uint32_t>(~0));
 
                 if (locator.empty() == true) {
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces(locator.empty() == true)->PID<%d><%d> Core::ServiceAdministrator& admin(Core::ServiceAdministrator::Instance())\n", getpid(), gettid());
                     Core::ServiceAdministrator& admin(Core::ServiceAdministrator::Instance());
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> className<%s> calling <WPEFramework::PluginHost::IPlugin> admin.Instantiate()\n", getpid(), gettid(), classNameString.c_str());
                     newIF = admin.Instantiate<IPlugin>(Core::Library(), className, version);
                     if (newIF == nullptr) {
                         ErrorMessage(_T("local class definitions/version does not exist"));
                     }
                 } else {
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> className<%s> _library = LoadLibrary(locator)\n", getpid(), gettid(), classNameString.c_str());
                     _library = LoadLibrary(locator);
                     if (_library.IsLoaded() == false) {
                         ErrorMessage(_T("Library could not be loaded"));
                     }
                     else {
+                        printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> className<%s> Core::ServiceAdministrator::Instance().Instantiate <IPlugin> \n", getpid(), gettid(), classNameString.c_str());
                         if ((newIF = Core::ServiceAdministrator::Instance().Instantiate<IPlugin>(_library, className, version)) == nullptr) {
                             ErrorMessage(_T("class definitions/version does not exist"));
                             _library = Core::Library();
@@ -1919,18 +1976,28 @@ namespace PluginHost {
                 }
 
                 if (newIF != nullptr) {
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> \n", getpid(), gettid(), newIF);
                     _extended = newIF->QueryInterface<IPluginExtended>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _extended<%p>\n", getpid(), gettid(), newIF, _extended);
                     _webRequest = newIF->QueryInterface<IWeb>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _webRequest<%p>\n", getpid(), gettid(), newIF, _webRequest);
                     _webSocket = newIF->QueryInterface<IWebSocket>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _webSocket<%p>\n", getpid(), gettid(), newIF, _webSocket);
                     _textSocket = newIF->QueryInterface<ITextSocket>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _textSocket<%p>\n", getpid(), gettid(), newIF, _textSocket);
                     _rawSocket = newIF->QueryInterface<IChannel>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _rawSocket<%p>\n", getpid(), gettid(), newIF, _rawSocket);
                     _webSecurity = newIF->QueryInterface<ISecurity>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _webSecurity<%p>\n", getpid(), gettid(), newIF, _webSecurity);
                     IDispatcher* jsonrpc = newIF->QueryInterface<IDispatcher>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> jsonrpc<%p>\n", getpid(), gettid(), newIF, jsonrpc);
                     if (jsonrpc != nullptr) {
                         _jsonrpc = jsonrpc->Local();
                     }
                     _composit = newIF->QueryInterface<ICompositPlugin>();
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _composit<%p>\n", getpid(), gettid(), newIF, _composit);
                     if (_composit != nullptr) {
+                        printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p> _administrator.AddComposit() \n", getpid(), gettid(), newIF);
                         _administrator.AddComposit(Callsign(), _composit);
                     }
                     if (_webSecurity == nullptr) {
@@ -1947,9 +2014,11 @@ namespace PluginHost {
 
                     uint32_t events = _administrator.SubSystemInfo();
 
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p>  _precondition.Evaluate() \n", getpid(), gettid(), newIF);
                     _precondition.Evaluate(events);
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p>  _termination.Evaluate() \n", getpid(), gettid(), newIF);
                     _termination.Evaluate(events);
-
+                    printf("WPEFramework::PluginHost::Server::Service::AcquireInterfaces()->PID<%d><%d> newIF<%p>  _external.SetInterface() \n", getpid(), gettid(), newIF);
                     _external.SetInterface(newIF);
 
                     _pluginHandling.Unlock();
@@ -2290,19 +2359,24 @@ namespace PluginHost {
                     {
                         uint32_t result = Core::ERROR_INVALID_DESIGNATOR;
 
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::RemoteHost::Launch()->PID<%d><%d>\n", getpid(), gettid());
                         Core::NodeId remoteNode(_object.RemoteAddress());
 
                         if (remoteNode.IsValid() == true) {
+                            printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::RemoteHost::Launch()->PID<%d><%d> calling engine()\n", getpid(), gettid());
                             Core::ProxyType<Core::IIPCServer> engine(Core::ProxyType<RPC::InvokeServer>::Create(&Core::WorkerPool::Instance()));
+                            printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::RemoteHost::Launch()->PID<%d><%d> calling client()\n", getpid(), gettid());
                             Core::ProxyType<RPC::CommunicatorClient> client(
                                 Core::ProxyType<RPC::CommunicatorClient>::Create(remoteNode, engine));
 
+                            printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::RemoteHost::Launch()->PID<%d><%d> calling client->Open()\n", getpid(), gettid());
                             // Oke we have ou selves a COMClient link. Lets see if we can get the proepr interface...
                             IRemoteInstantiation* instantiation = client->Open<IRemoteInstantiation>(_config.Connector(), ~0, 3000);
 
                             if (instantiation == nullptr) {
                                 result = Core::ERROR_ILLEGAL_STATE;
                             } else {
+                                printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::RemoteHost::Launch()->PID<%d><%d> calling instantiation->Instantiate()\n", getpid(), gettid());
                                 result = instantiation->Instantiate(
                                     RPC::Communicator::RemoteConnection::Id(),
                                     _object.Locator(),
@@ -2400,11 +2474,13 @@ namespace PluginHost {
                     , _requestObservers()
                     , _proxyStubObserver(*this, observableProxyStubPath)
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::CommunicatorServer()->PID<%d><%d> \n", getpid(), gettid());
                     // Shall we enable the non-happy day functionality to cleanup Release on behalf of unexpected
                     // channel closes. Only for testing Buggy plugins, turn it off (false)!
                     // STRONG RECOMMENDATION TO HAVE THIS ACTIVE (TRUE)!!!
                     RPC::Administrator::Instance().DelegatedReleases(delegatedReleases);
 
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::CommunicatorServer()->PID<%d><%d>RPC::Communicator::Open()\n", getpid(), gettid());
                     if (RPC::Communicator::Open(RPC::CommunicationTimeOut) != Core::ERROR_NONE) {
                         TRACE_L1("We can not open the RPC server. No out-of-process communication available. %d", __LINE__);
                     } else {
@@ -2423,6 +2499,7 @@ namespace PluginHost {
                 virtual ~CommunicatorServer()
                 {
                     ASSERT(_requestObservers.size() == 0 && "Sink for ICOMLink::INotifications not unregistered!");
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::~CommunicatorServer()->PID<%d><%d>\n", getpid(), gettid());
                     Observers::iterator index(_requestObservers.begin());
                     while (index != _requestObservers.end()) {
                         (*index)->Release();
@@ -2434,6 +2511,7 @@ namespace PluginHost {
             public:
                 void* Create(uint32_t& connectionId, const RPC::Object& instance, const uint32_t waitTime, const string& dataPath, const string& persistentPath, const string& volatilePath)
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Create()->PID<%d><%d>\n", getpid(), gettid());
                     return (RPC::Communicator::Create(connectionId, instance, RPC::Config(RPC::Communicator::Connector(), _application, persistentPath, _systemPath, dataPath, volatilePath, _appPath, RPC::Communicator::ProxyStubPath(), _postMortemPath), waitTime));
                 }
                 const string& PersistentPath() const
@@ -2837,6 +2915,7 @@ POP_WARNING()
                 , _configObserver(*this, server._config.PluginConfigPath())
                 , _compositPlugins()
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::ServiceMap()->PID<%d><%d>\n", getpid(), gettid());
                 if (server._config.PluginConfigPath().empty() == true) {
                     SYSLOG(Logging::Startup, (_T("Dynamic configs disabled.")));
                 } else if (_configObserver.IsValid() == false) {
@@ -2846,6 +2925,7 @@ POP_WARNING()
             POP_WARNING();
             ~ServiceMap()
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::~ServiceMap()->PID<%d><%d>\n", getpid(), gettid());
                 // Make sure all services are deactivated before we are killed (call Destroy on this object);
                 ASSERT(_services.size() == 0);
             }
@@ -3074,18 +3154,20 @@ POP_WARNING()
             }
             inline Core::ProxyType<Service> Insert(const Plugin::Config& configuration, const Service::mode mode)
             {
+                printf("WPEFramework::Core::ProxyType<WPEFramework::PluginHost::Server::Service> WPEFramework::PluginHost::Server::ServiceMap::Insert()->PID<%d><%d> calling Core::ProxyType<Service>::Create()\n", getpid(), gettid());
                 // Whatever plugin is needse, we at least have our MetaData plugin available (as the first entry :-).
                 Core::ProxyType<Service> newService(Core::ProxyType<Service>::Create(Configuration(), configuration, *this, mode, _engine));
 
                 if (newService.IsValid() == true) {
                     _adminLock.Lock();
 
+                    printf("WPEFramework::Core::ProxyType<WPEFramework::PluginHost::Server::Service> WPEFramework::PluginHost::Server::ServiceMap::Insert()->PID<%d><%d> calling _services.insert()\n", getpid(), gettid());
                     // Fire up the interface. Let it handle the messages.
                     _services.insert(std::pair<const string, Core::ProxyType<Service>>(configuration.Callsign.Value(), newService));
 
                     _adminLock.Unlock();
                 }
-
+                printf("WPEFramework::Core::ProxyType<WPEFramework::PluginHost::Server::Service> WPEFramework::PluginHost::Server::ServiceMap::Insert()->PID<%d><%d> return newService \n", getpid(), gettid());
                 return (newService);
             }
 
@@ -3588,7 +3670,7 @@ POP_WARNING()
                     ASSERT(Job::HasService() == true);
 
                     Core::ProxyType<Web::Response> response;
-
+                    printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>\n", getpid(), gettid());
                     if (_jsonrpc == true) {
                         if(_request->Verb == Request::HTTP_POST){
                             Core::ProxyType<Core::JSONRPC::Message> message(_request->Body<Core::JSONRPC::Message>());
@@ -3597,6 +3679,7 @@ POP_WARNING()
                             }
 
                             if (message->IsSet()) {
+                                printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d> Job::Process(_token, message)\n", getpid(), gettid());
                                 Core::ProxyType<Core::JSONRPC::Message> body = Job::Process(_token, message);
 
                                 // If we have no response body, it looks like an async-call...
@@ -3607,11 +3690,13 @@ POP_WARNING()
                                     }
                                 }
                                 else {
+                                    printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d> form the response \n", getpid(), gettid());
                                     response = IFactories::Instance().Response();
                                     response->Body(body);
                                     if (body->Error.IsSet() == false) {
                                         response->ErrorCode = Web::STATUS_OK;
                                         response->Message = _T("JSONRPC executed succesfully");
+                                        printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d> JSONRPC executed succesfully\n", getpid(), gettid());
                                     } else {
                                         response->ErrorCode = Web::STATUS_ACCEPTED;
                                         response->Message = _T("Failure on JSONRPC: ") + Core::NumberType<uint32_t>(body->Error.Code).Text();
@@ -3628,6 +3713,7 @@ POP_WARNING()
                             response->Message = _T("JSON-RPC only supported via POST request");
                         }
                     } else {
+                        printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>calling Job::Process(_request)\n", getpid(), gettid());
                         response = Job::Process(_request);
                         if (response.IsValid() == false) {
                             response = _missingResponse;
@@ -3642,16 +3728,18 @@ POP_WARNING()
                         if (response->CacheControl.IsSet() == false)
                             response->CacheControl = _T("no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0");
 
+                        printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>calling Job::Submit(response) \n", getpid(), gettid());
                         Job::Submit(response);
-
+                        printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>calling _request->Connection.Value() =%d \n", getpid(), gettid(), _request->Connection.Value());
                         if (_request->Connection.Value() == Web::Request::CONNECTION_CLOSE) {
+                            printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>calling Job::Close()\n", getpid(), gettid());
                             Job::Close();
                         }
                     }
-
+                    printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>calling _request.Release()\n", getpid(), gettid());
                     // We are done, clear all info
                     _request.Release();
-
+                    printf("WPEFramework::PluginHost::Server::Channel::WebRequestJob::Dispatch()->PID<%d><%d>calling Job::Clear()\n", getpid(), gettid());
                     Job::Clear();
                     
                 }
@@ -3906,13 +3994,15 @@ POP_WARNING()
             {
                 // This is the time where we determine what body is needed for the incoming request.
                 TRACE(WebFlow, (request));
+                printf("PEFramework::PluginHost::Server::Channel::LinkBody()->PID<%d><%d>\n", getpid(), gettid());
 
                 // Remember the path and options..
                 Core::ProxyType<Service> service;
                 bool serviceCall;
-
+                printf("PEFramework::PluginHost::Server::Channel::LinkBody()->PID<%d><%d> calling _parent.Services().FromLocator(request->Path<%s>)\n", getpid(), gettid(), request->Path.c_str());
                 uint32_t status = _parent.Services().FromLocator(request->Path, service, serviceCall);
 
+                printf("PEFramework::PluginHost::Server::Channel::LinkBody()->PID<%d><%d> calling request->Service() serviceCall<%d>\n", getpid(), gettid(),serviceCall);
                 request->Service(status, Core::ProxyType<PluginHost::Service>(service), serviceCall);
 
                 ASSERT(request->State() != Request::INCOMPLETE);
@@ -3922,8 +4012,10 @@ POP_WARNING()
                     ASSERT(service.IsValid() == true);
 
                     if (serviceCall == true) {
+                        printf("PEFramework::PluginHost::Server::Channel::LinkBody()->PID<%d><%d> calling service->Inbound(*request)\n", getpid(), gettid());
                         service->Inbound(*request);
                     } else {
+                        printf("PEFramework::PluginHost::Server::Channel::LinkBody()->PID<%d><%d> calling request->Body(IFactories::Instance().JSONRPC())\n", getpid(), gettid());
                         request->Body(IFactories::Instance().JSONRPC());
                     }
                 }
@@ -3933,7 +4025,7 @@ POP_WARNING()
                 ISecurity* security = nullptr;
 
                 TRACE(WebFlow, (request));
-
+                printf("WPEFramework::PluginHost::Server::Channel::Received()->PID<%d><%d> \n", getpid(), gettid());
                 // See if a token has been hooked up to the request, maybe we need a
                 // different security provider.
                 if (request->WebToken.IsSet()) {
@@ -4020,6 +4112,7 @@ POP_WARNING()
                     break;
                 }
                 case Request::COMPLETE: {
+                    printf("WPEFramework::PluginHost::Server::Channel::Received()->PID<%d><%d> switch::Request::COMPLETE \n", getpid(), gettid());
                     Core::ProxyType<Service> service(request->Service());
 
                     ASSERT(service.IsValid());
@@ -4031,6 +4124,7 @@ POP_WARNING()
                     }
 
                     if (response.IsValid() == true) {
+                        printf("WPEFramework::PluginHost::Server::Channel::Received()->PID<%d><%d> calling Submit(response) \n", getpid(), gettid());
                         // Report that the calls sign could not be found !!
                         Submit(response);
                     } else {
@@ -4042,7 +4136,9 @@ POP_WARNING()
 
                         if (job.IsValid() == true) {
                             Core::ProxyType<Web::Request> baseRequest(request);
+                            printf("WPEFramework::PluginHost::Server::Channel::Received()->PID<%d><%d> calling job->Set() \n", getpid(), gettid());
                             job->Set(Id(), &_parent, service, baseRequest, _security->Token(), !request->ServiceCall());
+                            printf("WPEFramework::PluginHost::Server::Channel::Received()->PID<%d><%d> calling _parent.Submit() \n", getpid(), gettid());
                             _parent.Submit(Core::ProxyType<Core::IDispatch>(job));
                         }
                     }
@@ -4296,11 +4392,12 @@ POP_WARNING()
                 , _connectionCheckTimer(connectionCheckTimer * 1000)
                 , _job(*this)
             {
+                printf("WPEFramework::PluginHost::Server::ChannelMap::ChannelMap()->PID<%d><%d>connectionCheckTimer<%d>\n", getpid(), gettid(), connectionCheckTimer);
                 if (connectionCheckTimer != 0) {
                     Core::Time NextTick = Core::Time::Now();
 
                     NextTick.Add(_connectionCheckTimer);
-
+                    printf("WPEFramework::PluginHost::Server::ChannelMap::ChannelMap()->PID<%d><%d>caling _job.Submit()\n", getpid(), gettid());
                     Core::ProxyType<Core::IDispatch> job(_job.Submit());
                     if (job.IsValid() == true) {
                         _parent.Schedule(NextTick.Ticks(), job);
@@ -4310,24 +4407,26 @@ POP_WARNING()
             POP_WARNING();
             ~ChannelMap()
             {
+                printf("WPEFramework::PluginHost::Server::ChannelMap::~ChannelMap()->PID<%d><%d>\n", getpid(), gettid());
                 Core::ProxyType<Core::IDispatch> job(_job.Revoke());
                 if (job.IsValid() == true) {
                     _parent.Revoke(job);
                     _job.Revoked();
                 }
-
+                printf("WPEFramework::PluginHost::Server::ChannelMap::~ChannelMap()->PID<%d><%d> calling Close(100)\n", getpid(), gettid());
                 // Start by closing the server thread..
                 Close(100);
 
                 // Kill all open connections, we are shutting down !!!
                 BaseClass::Iterator index(BaseClass::Clients());
 
+                printf("WPEFramework::PluginHost::Server::ChannelMap::~ChannelMap()->PID<%d><%d> calling index.Client()->Close(100) in while loop\n", getpid(), gettid());
                 while (index.Next() == true) {
                     // Oops nothing hapened for a long time, kill the connection
                     // give it 100ms to actually close, if not do it forcefully !!
                     index.Client()->Close(100);
                 }
-
+                printf("WPEFramework::PluginHost::Server::ChannelMap::~ChannelMap()->PID<%d><%d> calling Cleanup() \n", getpid(), gettid());
                 // Cleanup the closed sockets we created..
                 Cleanup();
             }
@@ -4380,7 +4479,9 @@ POP_WARNING()
             void Dispatch()
             {
                 TRACE(Activity, (string(_T("Cleanup job running..\n"))));
+                printf("WPEFramework::PluginHost::Server::ChannelMap::Dispatch()->PID<%d><%d> Cleanup job running..\n", getpid(), gettid());
 
+                printf("WPEFramework::PluginHost::Server::ChannelMap::Dispatch()->PID<%d><%d> Calling Cleanup() \n", getpid(), gettid());
                 // First clear all shit from last time..
                 Cleanup();
 

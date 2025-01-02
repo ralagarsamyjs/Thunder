@@ -212,6 +212,14 @@ namespace Web {
                     , _adminLock()
                     , _queue(queueSize)
                 {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::SerializerImpl::SerializerImpl()->PID<%d><%d> \
+                    _parent<%d> \
+                    _adminLock<%d> \
+                    _pool<%d>\n",
+                    getpid(), gettid(),
+                    sizeof(_parent),
+                    sizeof(_adminLock));
+
                 }
                 virtual ~SerializerImpl() = default;
 
@@ -312,6 +320,12 @@ namespace Web {
                     , _parent(parent)
                     , _pool(queueSize)
                 {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::DeserializerImpl::DeserializerImpl()->PID<%d><%d> \
+                    _parent<%d> \
+                    _pool<%d>\n",
+                    getpid(), gettid(),
+                    sizeof(_parent),
+                    sizeof(_pool));
                 }
                 DeserializerImpl(ThisClass& parent, ALLOCATOR allocator)
                     : INBOUND::Deserializer()
@@ -383,6 +397,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
                 , _webSocketMessage(Core::ProxyType<typename OUTBOUND::BaseElement>::Create())
                 , _pingFireTime(0)
             {
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::HandlerType()->PID<%d><%d> \
+                _handler<%d>  \
+                _parent<%d> \
+                _adminLock<%d> \
+                _state<%d> \
+                _serializerImpl<%d> \
+                _deserialiserImpl<%d> \
+                _path<%d> \
+                _protocol<%d> \
+                _query<%d> \
+                _origin<%d> \
+                _webSocketMessage<%d> \
+                _pingFireTime<%d>\n",
+                getpid(), gettid(),
+                sizeof(_handler),
+                sizeof(_parent),
+                sizeof(_adminLock),
+                sizeof(_state),
+                sizeof(_serializerImpl),
+                sizeof(_deserialiserImpl),
+                sizeof(_path),
+                sizeof(_protocol),
+                sizeof(_query),
+                sizeof(_origin),
+                sizeof(_webSocketMessage),
+                sizeof(_pingFireTime)
+                );
             }
             template <typename... Args>
             HandlerType(ParentClass& parent, const bool binary, const bool masking, const uint8_t queueSize, ALLOCATOR allocator, Args&&... args)
@@ -400,6 +441,33 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
                 , _webSocketMessage(Core::ProxyType<typename OUTBOUND::BaseElement>::Create())
                 , _pingFireTime(0)
             {
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::HandlerType()->PID<%d><%d> \
+                _handler<%d>  \
+                _parent<%d> \
+                _adminLock<%d> \
+                _state<%d> \
+                _serializerImpl<%d> \
+                _deserialiserImpl<%d> \
+                _path<%d> \
+                _protocol<%d> \
+                _query<%d> \
+                _origin<%d> \
+                _webSocketMessage<%d> \
+                _pingFireTime<%d>\n",
+                getpid(), gettid(),
+                sizeof(_handler),
+                sizeof(_parent),
+                sizeof(_adminLock),
+                sizeof(_state),
+                sizeof(_serializerImpl),
+                sizeof(_deserialiserImpl),
+                sizeof(_path),
+                sizeof(_protocol),
+                sizeof(_query),
+                sizeof(_origin),
+                sizeof(_webSocketMessage),
+                sizeof(_pingFireTime)
+                );                
             }
 POP_WARNING()
             ~HandlerType() override = default;
@@ -470,11 +538,12 @@ POP_WARNING()
                 _pingFireTime = Core::Time::Now().Ticks();
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::Web::WebSocketLinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::HandlerType<ACTUALLINK>::ThisClass::Ping()->PID<%d><%d> calling _handler.Ping()\n", getpid(), gettid());
                 _handler.Ping();
 
                 _adminLock.Unlock();
 
+                printf("WPEFramework::Web::WebSocketLinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::HandlerType<ACTUALLINK>::ThisClass::Ping()->PID<%d><%d> calling ACTUALLINK::Trigger()\n", getpid(), gettid());
                 ACTUALLINK::Trigger();
             }
             bool Masking() const
@@ -502,11 +571,11 @@ POP_WARNING()
             void Submit(const Core::ProxyType<OUTBOUND>& element)
             {
                 _adminLock.Lock();
-
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::Submit()->PID<%d><%d> calling _serializerImpl.Submit()\n", getpid(), gettid());
                 if ((IsSuspended() == false) && (IsOpen() == true) && (_serializerImpl.Submit(element) == true)) {
 
                     _adminLock.Unlock();
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::Submit()->PID<%d><%d> calling ACTUALLINK::Trigger()\n", getpid(), gettid());
                     ACTUALLINK::Trigger();
                 } else {
                     _adminLock.Unlock();
@@ -517,19 +586,19 @@ POP_WARNING()
                 uint32_t result = 0;
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::Web::WebSocketLinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::HandlerType<ACTUALLINK>::ThisClass::Close()->PID<%d><%d>\n", getpid(), gettid());
                 if (IsSuspended() == false) {
                     if ((State() & WEBSOCKET) != 0) {
                         // Send out a close message
                         // TODO: Creat a message we can SEND
                     }
-
+                    printf("WPEFramework::Web::WebSocketLinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::HandlerType<ACTUALLINK>::ThisClass::Close(_state |= SUSPENDED)->PID<%d><%d>\n", getpid(), gettid());
                     // Do not accept any new messages.
                     _state |= SUSPENDED;
                 }
 
                 _adminLock.Unlock();
-
+                printf("WPEFramework::Web::WebSocketLinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::HandlerType<ACTUALLINK>::ThisClass::Close(_state |= SUSPENDED)->PID<%d><%d> CheckForClose(waitTime)\n", getpid(), gettid());
                 result = CheckForClose(waitTime);
 
                 return (result);
@@ -542,21 +611,25 @@ POP_WARNING()
 
                 _adminLock.Lock();
 
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::SendData()->PID<%d><%d> _state |= ACTIVITY\n", getpid(), gettid());
                 _state |= ACTIVITY;
 
                 if ((_state & WEBSOCKET) != 0) {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::SendData(_state & WEBSOCKET)->PID<%d><%d> calling _parent.SendData()\n", getpid(), gettid());
                     if (maxSendSize > 8) {
                         result = _parent.SendData(&(dataFrame[4]), (maxSendSize - 8));
 
                         result = _handler.Encoder(dataFrame, (maxSendSize - 8), result);
                     }
                 } else {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::SendData(_state & WEBSOCKET)->PID<%d><%d> calling _serializerImpl.Serialize(dataFrame, maxSendSize)\n", getpid(), gettid());
                     result = _serializerImpl.Serialize(dataFrame, maxSendSize);
                 }
 
                 _adminLock.Unlock();
 
                 if (result == 0) {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::SendData(_state & WEBSOCKET)->PID<%d><%d> calling CheckForClose(0)\n", getpid(), gettid());
                     CheckForClose(0);
                 }
 
@@ -567,12 +640,12 @@ POP_WARNING()
                 uint16_t result = 0;
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData()->PID<%d><%d> _state |= ACTIVITY\n", getpid(), gettid());
                 _state |= ACTIVITY;
 
                 if ((_state & WEBSOCKET) != 0) {
                     bool tooSmall = false;
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData(_state & WEBSOCKET)->PID<%d><%d>\n", getpid(), gettid());
                     // check for multiple messages if available...
                     while ((result < receivedSize) && (tooSmall == false)) {
                         uint16_t actualDataSize = receivedSize - result;
@@ -599,14 +672,19 @@ POP_WARNING()
                                 if (_handler.IsCompleteMessage() == true) {
                                     // It a control frame, react with the proper action.
                                     if (_handler.FrameType() == WebSocket::Protocol::PING) {
+                                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData(WebSocket::Protocol::PING)->PID<%d><%d> calling _handler.Pong()\n", getpid(), gettid());
                                         // Send a PONG
                                         _handler.Pong();
+                                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData(WebSocket::Protocol::PING)->PID<%d><%d> calling ACTUALLINK::Trigger()\n", getpid(), gettid());
                                         ACTUALLINK::Trigger();
                                     } else if (_handler.FrameType() == WebSocket::Protocol::CLOSE) {
+                                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData(WebSocket::Protocol::CLOSE)->PID<%d><%d> calling _handler.CLOSE()\n", getpid(), gettid());
                                         // Send a close response
                                         _handler.Close();
+                                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData(WebSocket::Protocol::CLOSE)->PID<%d><%d> calling ACTUALLINK::Trigger()\n", getpid(), gettid());
                                         ACTUALLINK::Trigger();
                                     } else if (_handler.FrameType() == WebSocket::Protocol::PONG) {
+                                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData(WebSocket::Protocol::PONG)->PID<%d><%d> \n", getpid(), gettid());
                                         if (_pingFireTime != 0) {
                                             TRACE_L1("Ping acknowledged by a pong in %d (uS)", static_cast<uint32_t>(static_cast<uint64_t>(Core::Time::Now().Ticks() - _pingFireTime)));
                                             _pingFireTime = 0;
@@ -647,6 +725,7 @@ POP_WARNING()
 
                             } else {
                                 if (actualDataSize != 0) {
+									printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData()->PID<%d><%d> calling _parent.ReceiveData()\n", getpid(),gettid());
                                    _parent.ReceiveData(&(dataFrame[result + headerSize]), actualDataSize);
                                 }
 
@@ -655,12 +734,14 @@ POP_WARNING()
                         }
                     }
                 } else {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData()->PID<%d><%d> calling _deserialiserImpl.Deserialize()\n", getpid(),gettid());
                     result = _deserialiserImpl.Deserialize(dataFrame, receivedSize);
                 }
 
                 _adminLock.Unlock();
 
                 if (result == 0) {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceiveData()->PID<%d><%d> calling CheckForClose(0)\n", getpid(),gettid());
                     CheckForClose(0);
                 }
 
@@ -675,8 +756,8 @@ POP_WARNING()
                 // If the connection is closed by peer 'during' socket write, cleanup response message
                 if (IsClosed() == true) {
                     _serializerImpl.Flush();
-                }
-
+                }   
+                printf("WPEFramework::Web::WebSocketLinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::HandlerType<ACTUALLINK>::ThisClass::StateChange()->PID<%d><%d>calling _parent.StateChange()\n", getpid(), gettid());
                 _parent.StateChange();
 
                 _adminLock.Unlock();
@@ -712,14 +793,16 @@ POP_WARNING()
             uint32_t CheckForClose(uint32_t waitTime)
             {
                 uint32_t result = 0;
-
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::CheckForClose()->PID<%d><%d>\n", getpid(), gettid());
                 if ((IsSuspended() == true) && (_serializerImpl.IsIdle() == true) && (_deserialiserImpl.IsIdle() == true) && (_parent.IsIdle() == true)) {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::CheckForClose()->PID<%d><%d> calling ACTUALLINK::Close(waitTime)\n", getpid(), gettid());
                     result = ACTUALLINK::Close(waitTime);
                 } else
                     while (waitTime > 0) {
                         uint32_t sleepTime = (waitTime > 100 ? 100 : waitTime);
 
                         if (sleepTime > 0) {
+                            printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::CheckForClose()->PID<%d><%d> calling SleepMs(sleepTime)\n", getpid(), gettid());
                             SleepMs(sleepTime);
 
                             if (waitTime != Core::infinite) {
@@ -728,6 +811,7 @@ POP_WARNING()
                             }
                         }
                         if ((IsOpen() == false) || ((IsSuspended() == true) && (_serializerImpl.IsIdle() == true) && (_deserialiserImpl.IsIdle() == true) && (_parent.IsIdle() == true))) {
+                            printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::CheckForClose()->PID<%d><%d> calling SleepMs(sleepTime)\n", getpid(), gettid());
                             result = ACTUALLINK::Close(waitTime);
 
                             waitTime = 0;
@@ -746,6 +830,7 @@ POP_WARNING()
             }
             bool LinkBody(Core::ProxyType<INBOUND>& element)
             {
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::LinkBody()->PID<%d><%d> calling _parent.LinkBody(element)\n", getpid(), gettid());
                 _parent.LinkBody(element);
 
                 return (element->HasBody());
@@ -767,6 +852,7 @@ POP_WARNING()
             }
             void ReceivedWebSocket(Core::ProxyType<INBOUND>& element, const TemplateIntToType<1>& /* For compile time diffrentiation */)
             {
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d>\n", getpid(), gettid());
                 // we are still in the accepting mode
                 if ((element->Upgrade.IsSet()) && (element->Upgrade.Value() == Request::UPGRADE_WEBSOCKET) && (element->Connection.IsSet()) && (element->Connection.Value() == Request::CONNECTION_UPGRADE)) {
                     // Multiple message might be coming in, protect the state before we make assumptions on it value.
@@ -776,6 +862,7 @@ POP_WARNING()
                         _webSocketMessage->ErrorCode = Web::STATUS_INTERNAL_SERVER_ERROR;
                         _webSocketMessage->Message = _T("State of the link can not be upgraded.");
                     } else {
+                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> UPGRADING\n", getpid(), gettid());
                         _state = static_cast<EnumlinkState>((_state & 0xF0) | UPGRADING);
                         _protocol = element->WebSocketProtocol.Value();
                         _path = element->Path;
@@ -787,10 +874,11 @@ POP_WARNING()
 
                         _webSocketMessage->Message.clear();
                         _webSocketMessage->ErrorCode = Web::STATUS_SWITCH_PROTOCOL;
-
+                        printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> _parent.StateChange()\n", getpid(), gettid());
                         _parent.StateChange();
 
                         if (_webSocketMessage->ErrorCode != Web::STATUS_SWITCH_PROTOCOL) {
+                            printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> _parent.StateChange()\n", getpid(), gettid());
                             _state = (_state & 0xF0) | WEBSERVER;
                             _path.clear();
                             _query.clear();
@@ -806,14 +894,15 @@ POP_WARNING()
                             }
                         }
                     }
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> calling _serializerImpl.Submit(_webSocketMessage)\n", getpid(), gettid());
                     // Send out the result of the upgraded message.
                     _serializerImpl.Submit(_webSocketMessage);
 
                     _adminLock.Unlock();
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> calling ACTUALLINK::Trigger()\n", getpid(), gettid());
                     ACTUALLINK::Trigger();
                 } else {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> calling _parent.Received(element)\n", getpid(), gettid());
                     _parent.Received(element);
                 }
             }
@@ -824,9 +913,9 @@ POP_WARNING()
                     ASSERT((_state & UPGRADING) != 0);
 
                     _adminLock.Lock();
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::UpgradeCompleted()->PID<%d><%d> _state = (_state & 0xF0) | WEBSOCKET\n", getpid(), gettid());
                     _state = (_state & 0xF0) | WEBSOCKET;
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::UpgradeCompleted()->PID<%d><%d> calling _parent.StateChange()\n", getpid(), gettid());
                     _parent.StateChange();
 
                     _adminLock.Unlock();
@@ -841,9 +930,10 @@ POP_WARNING()
                 bool result = false;
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::UpgradeToWebSocket()->PID<%d><%d>\n", getpid(), gettid());
                 if ((_state & WEBSERVER) != 0) {
                     result = true;
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::UpgradeToWebSocket(_state & WEBSERVER)->PID<%d><%d> _state = (_state & 0xF0) | UPGRADING\n", getpid(), gettid());
                     _state = (_state & 0xF0) | UPGRADING;
                     _origin = (origin.empty() ? ACTUALLINK::LocalId() : origin);
 
@@ -869,8 +959,9 @@ POP_WARNING()
                     _query = query;
                     _path = path;
                     _protocol = Web::ProtocolsArray(protocol);
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::UpgradeToWebSocket(_state & WEBSERVER)->PID<%d><%d> _serializerImpl.Submit(_webSocketMessage)\n", getpid(), gettid());
                     _serializerImpl.Submit(_webSocketMessage);
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::UpgradeToWebSocket(_state & WEBSERVER)->PID<%d><%d> calling ACTUALLINK::Trigger()\n", getpid(), gettid());
                     ACTUALLINK::Trigger();
                 }
 
@@ -889,21 +980,22 @@ POP_WARNING()
                     ASSERT((_state & UPGRADING) != 0);
 
                     _adminLock.Lock();
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> Seems like we succeeded, turn on the link.._state = (_state & 0xF0) | WEBSOCKET\n", getpid(), gettid());
                     // Seems like we succeeded, turn on the link..
                     _state = (_state & 0xF0) | WEBSOCKET;
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> _parent.StateChange\n", getpid(), gettid());
                     _parent.StateChange();
 
                     _adminLock.Unlock();
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> ACTUALLINK::Trigger()\n", getpid(), gettid());
                     ACTUALLINK::Trigger();
                 } else if ((_webSocketMessage.IsValid() == true) && (element->ErrorCode == Web::STATUS_FORBIDDEN)) {
                     ASSERT((_state & UPGRADING) != 0);
-
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> Not allowed websocket Close(0)\n", getpid(), gettid());
                     // Not allowed websocket
                     Close(0);
                 } else {
+                    printf("WPEFramework::Web::WebSocketLinkType<...>::HandlerType<...>::ThisClass::ReceivedWebSocket()->PID<%d><%d> _parent.Received(element)\n", getpid(), gettid());
                     _parent.Received(element);
                 }
             }

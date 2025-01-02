@@ -218,6 +218,7 @@ namespace Plugin {
             , _externalSubsystems()
             , _observers()
         {
+            printf("WPEFramework::Plugin::Controller::Controller()->PID<%d><%d> Constructor\n", getpid(), gettid());
         }
         POP_WARNING();
 
@@ -243,6 +244,7 @@ namespace Plugin {
         {
             ASSERT((_pluginServer == nullptr) && (pluginServer != nullptr));
 
+            printf("WPEFramework::Plugin::Controller::SetServer()->PID<%d><%d>\n", getpid(), gettid());
             _pluginServer = pluginServer;
 
             // Attach to the SubSystems, we propagate the changes.

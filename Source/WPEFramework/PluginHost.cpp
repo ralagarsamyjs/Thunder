@@ -199,8 +199,11 @@ POP_WARNING()
     private:
         virtual uint32_t Worker() override
         {
+            printf("WPEFramework::PluginHost::ExitHandler::Worker()->PID<%d><%d>calling CloseDown(_destructor)\n", getpid(), gettid());
             CloseDown(_destructor);
+            printf("WPEFramework::PluginHost::ExitHandler::Worker()->PID<%d><%d>calling Block()\n", getpid(), gettid());
             Block();
+            printf("WPEFramework::PluginHost::ExitHandler::Worker()->PID<%d><%d> return (Core::infinite)\n", getpid(), gettid());
             return (Core::infinite);
         }
         static void CloseDown(PluginHost::Server* destructor)
@@ -214,8 +217,9 @@ POP_WARNING()
                 fprintf(stdout, EXPAND_AND_QUOTE(APPLICATION_NAME) " closing down.\n");
                 fflush(stderr);
             }
-
+            printf("WPEFramework::PluginHost::ExitHandler::CloseDown()->PID<%d><%d> calling destructor->Close()\n", getpid(), gettid());
             destructor->Close();
+            printf("WPEFramework::PluginHost::ExitHandler::CloseDown()->PID<%d><%d> delete destructor, _config\n", getpid(), gettid());
             delete destructor;
             delete _config;
             _config = nullptr;
@@ -237,7 +241,7 @@ POP_WARNING()
                 fflush(stderr);
             }
 
-
+            printf("WPEFramework::PluginHost::ExitHandler::CloseDown()->PID<%d><%d> calling Core::Singleton::Dispose()\n", getpid(), gettid());
             // Now clear all singeltons we created.
             Core::Singleton::Dispose();
 

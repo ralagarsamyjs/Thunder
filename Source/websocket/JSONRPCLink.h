@@ -1014,6 +1014,7 @@ namespace WPEFramework {
 					ToMessage(parameters, message);
 
 					_adminLock.Lock();
+					printf("WPEFramework::JSONRPC::LinkType<...>::Send()->PID<%d><%d>method<%s>\n", getpid(), gettid(), method.c_str());
 
 					typename std::pair<typename PendingMap::iterator, bool> newElement = _pendingQueue.emplace(std::piecewise_construct,
 						std::forward_as_tuple(id),
@@ -1023,7 +1024,7 @@ namespace WPEFramework {
 					if (newElement.second == true) {
 						uint64_t expiry = newElement.first->second.Expiry();
 						_adminLock.Unlock();
-
+						printf("WPEFramework::JSONRPC::LinkType<...>::Send()->PID<%d><%d> calling _channel->Submit()\n", getpid(), gettid());
 						_channel->Submit(Core::ProxyType<INTERFACE>(message));
 
 						result = Core::ERROR_NONE;

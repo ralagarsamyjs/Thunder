@@ -319,6 +319,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
             , _dispatchedJobMonitor(*this, static_cast<uint32_t>(DispatchedJobMonitor::DefaultScheduleIntervalInMilliSeconds))
             #endif 
         {
+            printf("WPEFramework::Core::WorkerPool::WorkerPool()->PID<%d><%d>threadCount<%d>stackSize<%d>queueSize<%d>\n", getpid(), gettid(), threadCount, stackSize, queueSize);
             _metadata.Slots = threadCount + 2;
             _metadata.Slot = new Core::ThreadPool::Metadata[threadCount + 2];
         }
@@ -335,6 +336,7 @@ POP_WARNING()
         {
             // A job should always be submitted only once, see if te offered job does not reside in the _timer...
             ASSERT(_timer.HasEntry(Timer(this, job)) == false);
+            printf("WPEFramework::Core::WorkerPool::Submit()->PID<%d><%d> calling _threadPool.Submit()\n", getpid(), gettid());
 
             _threadPool.Submit(job, Core::infinite);
         }

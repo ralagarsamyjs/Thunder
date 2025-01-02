@@ -140,6 +140,7 @@ namespace Core {
 
             uint32_t Release() const 
             {
+                printf("WPEFramework::Core::ThreadPool::MeasurableJob::Release()->PID<%d><%d>\n", getpid(), gettid());
                 return _job.Release();
             }
 
@@ -422,8 +423,9 @@ POP_WARNING()
             }
             void Process()
             {
+                printf("WPEFramework::Core::ThreadPool::Minion::Process()->PID<%d><%d> calling _dispatcher->Initialize()\n", getpid(), gettid());
                 _dispatcher->Initialize();
-
+                printf("WPEFramework::Core::ThreadPool::Minion::Process()->PID<%d><%d> calling _parent._queue.Extract(_currentRequest, infinite)\n", getpid(), gettid());
                 while (_parent._queue.Extract(_currentRequest, infinite) == true) {
 
                     ASSERT(_currentRequest.IsValid() == true);
@@ -480,8 +482,9 @@ POP_WARNING()
 
                     _parent.Idle();
                 }
-
+                printf("WPEFramework::Core::ThreadPool::Minion::Process()->PID<%d><%d> calling _dispatcher->Deinitialize()\n", getpid(), gettid());
                 _dispatcher->Deinitialize();
+                printf("WPEFramework::Core::ThreadPool::Minion::Process()->PID<%d><%d> return\n", getpid(), gettid());
             }
 
         private:
@@ -512,6 +515,7 @@ POP_WARNING()
             }
             ~Executor() override
             {
+                printf("WPEFramework::Core::ThreadPool::Executor::~Executor()->PID<%d><%d> calling Thread::Stop() & Wait(Thread::STOPPED, infinite)\n", getpid(), gettid());
                 Thread::Stop();
                 Wait(Thread::STOPPED, infinite);
             }
@@ -525,9 +529,11 @@ POP_WARNING()
                 info.WorkerId = Id();
             }
             void Run () {
+                printf("WPEFramework::Core::ThreadPool::Executor::Run()->PID<%d><%d> calling Thread::Run()\n", getpid(), gettid());
                 Thread::Run();
             }
             void Stop () {
+                printf("WPEFramework::Core::ThreadPool::Executor::Stop()->PID<%d><%d> calling Thread::Wait(Thread::STOPPED|Thread::BLOCKED, infinite)\n", getpid(), gettid());
                 Thread::Wait(Thread::STOPPED|Thread::BLOCKED, infinite);
             }
             Minion& Me() {
@@ -537,8 +543,11 @@ POP_WARNING()
         private:
             uint32_t Worker() override
             {
+                printf("WPEFramework::Core::ThreadPool::Executor::Worker()->PID<%d><%d> calling _minion.Process()\n", getpid(), gettid());
                 _minion.Process();
+                printf("WPEFramework::Core::ThreadPool::Executor::Worker()->PID<%d><%d> calling Thread::Block()\n", getpid(), gettid());
                 Thread::Block();
+                printf("WPEFramework::Core::ThreadPool::Executor::Worker()->PID<%d><%d> return (infinite)\n", getpid(), gettid());
                 return (infinite);
             }
 
@@ -565,6 +574,7 @@ POP_WARNING()
             }
         }
         ~ThreadPool() {
+            printf("WPEFramework::Core::ThreadPool::~ThreadPool()->PID<%d><%d>calling Stop() & _units.clear()\n", getpid(), gettid());
             Stop();
             _units.clear();
         }
@@ -612,9 +622,11 @@ POP_WARNING()
             ASSERT(_queue.HasEntry(job) == false);
 
             if (Thread::ThreadId() == ResourceMonitor::Instance().Id()) {
+                printf("WPEFramework::Core::ThreadPool::Submit()->PID<%d><%d>waitTime<0x%8x> calling _queue.Post(job)\n", getpid(), gettid(),waitTime);
                 _queue.Post(job);
             }
             else {
+                printf("WPEFramework::Core::ThreadPool::Submit()->PID<%d><%d>waitTime<0x%8x> calling _queue.Insert(job, waitTime)\n", getpid(), gettid(), waitTime);
                 _queue.Insert(job, waitTime);
             }
 
@@ -652,18 +664,22 @@ POP_WARNING()
         }
         void Run()
         {
+            printf("WPEFramework::Core::ThreadPool::Run()->PID<%d><%d> calling _queue.Enable()\n", getpid(), gettid());
             _queue.Enable();
             std::list<Executor>::iterator index = _units.begin();
             while (index != _units.end()) {
+                printf("WPEFramework::Core::ThreadPool::Run()->PID<%d><%d> calling index->Run()\n", getpid(), gettid());
                 index->Run();
                 index++;
             }
         }
         void Stop()
         {
+            printf("WPEFramework::Core::ThreadPool::Stop()->PID<%d><%d> calling _queue.Disable()\n", getpid(), gettid());
             _queue.Disable();
             std::list<Executor>::iterator index = _units.begin();
             while (index != _units.end()) {
+                printf("WPEFramework::Core::ThreadPool::Stop()->PID<%d><%d> calling index->Stop()\n", getpid(), gettid());
                 index->Stop();
                 index++;
             }

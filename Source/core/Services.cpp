@@ -30,19 +30,22 @@ namespace Core {
         , _callback(nullptr)
         , _unreferencedLibraries()
     {
+        printf("WPEFramework::Core::ServiceAdministrator::ServiceAdministrator()->PID<%d><%d> constructor \n", getpid(), gettid());
     }
 
     /* virtual */ ServiceAdministrator::~ServiceAdministrator()
     {
+        printf("WPEFramework::Core::ServiceAdministrator::~ServiceAdministrator()->PID<%d><%d> destructor \n", getpid(), gettid());
     }
 
     void ServiceAdministrator::Register(IServiceMetadata* metadata, IServiceFactory* factory)
     {
         _adminLock.Lock();
-
+        printf("WPEFramework::Core::ServiceAdministrator::Register()->PID<%d><%d>serviceName<%s>Only register a service once\n", getpid(), gettid(), metadata->ServiceName().c_str());
         // Only register a service once !!!
         ASSERT(std::find(_services.begin(), _services.end(), ServiceBlock(metadata, factory)) == _services.end());
 
+        printf("WPEFramework::Core::ServiceAdministrator::Register()->PID<%d><%d>serviceName<%s> calling _services.emplace_back() \n", getpid(), gettid(), metadata->ServiceName().c_str());
         _services.emplace_back(metadata, factory);
 
         _adminLock.Unlock();
@@ -51,12 +54,12 @@ namespace Core {
     void ServiceAdministrator::Unregister(IServiceMetadata* metadata, IServiceFactory* factory)
     {
         _adminLock.Lock();
-
+        printf("WPEFramework::Core::ServiceAdministrator::Unregister()->PID<%d><%d>serviceName<%s> Only unregister a service once\n", getpid(), gettid(), metadata->ServiceName().c_str());
         ServiceList::iterator index = std::find(_services.begin(), _services.end(), ServiceBlock(metadata, factory));
 
         // Only unregister a service once !!!
         ASSERT(index != _services.end());
-
+        printf("WPEFramework::Core::ServiceAdministrator::Unregister()->PID<%d><%d>serviceName<%s> Only unregister a service once\n", getpid(), gettid(), metadata->ServiceName().c_str());
         _services.erase(index);
 
         _adminLock.Unlock();
@@ -72,13 +75,14 @@ namespace Core {
         void* result = nullptr;
 
         _adminLock.Lock();
-
+        printf("WPEFramework::Core::ServiceAdministrator::Instantiate()->PID<%d><%d> name<%s>interfaceNumber<%d>\n", getpid(), gettid(), name, interfaceNumber);
         ServiceList::iterator index = _services.begin();
 
         while ((index != _services.end()) && (result == nullptr)) {
             const char* thisName = index->first->ServiceName().c_str();
 
             if ((strcmp(thisName, name) == 0) && ((version == static_cast<uint32_t>(~0)) || (version == static_cast<uint32_t>((index->first->Major() << 8) | index->first->Minor())))) {
+                printf("WPEFramework::Core::ServiceAdministrator::Instantiate()->PID<%d><%d> name<%s> interfaceNumber<%d> calling index->second->Create()\n", getpid(), gettid(), name, interfaceNumber);
                 result = index->second->Create(index->first, library, interfaceNumber);
             }
             index++;
@@ -96,6 +100,7 @@ namespace Core {
     void ServiceAdministrator::ReleaseLibrary(Library&& reference)
     {
         _adminLock.Lock();
+        printf("WPEFramework::Core::ServiceAdministrator::ReleaseLibrary()->PID<%d><%d> calling _unreferencedLibraries.emplace_back()\n", getpid(), gettid());
         _unreferencedLibraries.emplace_back(std::move(reference));
         _adminLock.Unlock();
     }
@@ -103,6 +108,7 @@ namespace Core {
     void ServiceAdministrator::FlushLibraries()
     {
         _adminLock.Lock();
+        printf("WPEFramework::Core::ServiceAdministrator::FlushLibraries()->PID<%d><%d> calling unreferenced size<%d>\n", getpid(), gettid(), _unreferencedLibraries.size());
         while (_unreferencedLibraries.size() != 0) {
             // A few closing code instructions might still be required for 
             // that thread that submitted the librray to complete, so at 

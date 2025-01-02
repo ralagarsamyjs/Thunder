@@ -191,6 +191,7 @@ namespace ProxyStub {
         }
         uint32_t AddRef() const {
             _adminLock.Lock();
+            printf("WPEFramework::ProxyStub::UnknownProxy::AddRef()->PID<%d><%d>_refCount<%d> +1\n", getpid(), gettid(), _refCount);
             _refCount++;
             _adminLock.Unlock();
             return (Core::ERROR_NONE);
@@ -198,6 +199,7 @@ namespace ProxyStub {
         uint32_t Release() const {
             uint32_t result = Core::ERROR_NONE;
 
+            printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d>_refCount<%d> +1\n", getpid(), gettid(), _refCount);
             _adminLock.Lock();
             ASSERT(_refCount > 0);
             _refCount--;
@@ -207,20 +209,24 @@ namespace ProxyStub {
             } 
             else if( _refCount == 0 ) {
                 _adminLock.Unlock();
+                printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d>_refCount<0> Core::ERROR_DESTRUCTION_SUCCEEDED\n", getpid(), gettid());
                 result = Core::ERROR_DESTRUCTION_SUCCEEDED;
                 ASSERT(_channel.IsValid() == false);
             }
             else {
                 if ((_channel.IsValid() == true) && ((_mode & (CACHING_RELEASE|CACHING_ADDREF)) == 0)) {
 
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> We have reached 0, signal the other side\n", getpid(), gettid());
                     // We have reached "0", signal the other side..
                     Core::ProxyType<RPC::InvokeMessage> message(RPC::Administrator::Instance().Message());
-
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling message->Parameters().Set(_implementation, _interfaceId, 1) \n", getpid(), gettid());
                     message->Parameters().Set(_implementation, _interfaceId, 1);
 
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling message->Parameters().Writer().Number<uint32_t>(_remoteReferences) \n", getpid(), gettid());
                     // Pass on the number of reference we need to lower, since it is indicated by the amount of times this proxy had to be created
                     message->Parameters().Writer().Number<uint32_t>(_remoteReferences);
 
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling _channel->Invoke(message, RPC::CommunicationTimeOut) \n", getpid(), gettid());
                     // Just try the destruction for few Seconds...
                     result = _channel->Invoke(message, RPC::CommunicationTimeOut);
 
@@ -229,29 +235,33 @@ namespace ProxyStub {
                         result |= COM_ERROR;
                     }
                     else {
+                        printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling _channel->Invoke(message, RPC::CommunicationTimeOut) \n", getpid(), gettid());
                         // Pass the remote release return value through
                         result = message->Response().Reader().Number<uint32_t>();
                     }
                 }
 
                 _adminLock.Unlock();
-
+                printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling RPC::Administrator::Instance().UnregisterUnknownProxy(*this) \n", getpid(), gettid());
                 // Remove our selves from the Administration, we are done..
                 if (RPC::Administrator::Instance().UnregisterUnknownProxy(*this) == true ) {
                     ASSERT(_refCount == 1);
                     _refCount = 0;
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> Core::ERROR_DESTRUCTION_SUCCEEDED \n", getpid(), gettid());
                     result = Core::ERROR_DESTRUCTION_SUCCEEDED;
                 }
             }
-
+            printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> return \n", getpid(), gettid());
             return (result);
         }
         inline void* RemoteInterface(const uint32_t id) const
         {
             void* result = nullptr;
+            printf("WPEFramework::ProxyStub::UnknownProxy::RemoteInterface()->PID<%d><%d>id<%d>\n", getpid(), gettid(), id);
             Core::ProxyType<RPC::InvokeMessage> message(RPC::Administrator::Instance().Message());
             RPC::Data::Frame::Writer parameters(message->Parameters().Writer());
 
+            printf("WPEFramework::ProxyStub::UnknownProxy::RemoteInterface()->PID<%d><%d>message->Parameters().Set()_interfaceId<%d>\n", getpid(), gettid(),_interfaceId);
             message->Parameters().Set(_implementation, _interfaceId, 2);
             parameters.Number<uint32_t>(id);
 
@@ -263,6 +273,7 @@ namespace ProxyStub {
             else {
                 RPC::Data::Frame::Reader response(message->Response().Reader());
                 Core::instance_id impl = response.Number<Core::instance_id>();
+                printf("WPEFramework::ProxyStub::UnknownProxy::RemoteInterface()->PID<%d><%d>calling RPC::Administrator::Instance().ProxyInstance()\n", getpid(), gettid());
                 // From what is returned, we need to create a proxy
                 RPC::Administrator::Instance().ProxyInstance(_channel, impl, true, id, result);
 
@@ -285,7 +296,7 @@ namespace ProxyStub {
             void* result = nullptr;
 
             _adminLock.Lock();
-
+            printf("WPEFramework::ProxyStub::UnknownProxy::Interface()->PID<%d><%d>calling RPC::Administrator::Instance().ProxyInstance()\n", getpid(), gettid());    
             if (_channel.IsValid() == true) {
                 RPC::Administrator::Instance().ProxyInstance(_channel, implementation, true, id, result);
             }
@@ -308,7 +319,7 @@ namespace ProxyStub {
         inline Core::ProxyType<RPC::InvokeMessage> Message(const uint8_t methodId) const
         {
             Core::ProxyType<RPC::InvokeMessage> message(RPC::Administrator::Instance().Message());
-
+            printf("WPEFramework::ProxyStub::UnknownProxy::Message()->PID<%d><%d>_implementation<%p>_interfaceId<%d>methodId<%d>\n", getpid(), gettid(),_implementation, _interfaceId, (methodId + 3));
             message->Parameters().Set(_implementation, _interfaceId, methodId + 3);
 
             return (message);
@@ -320,7 +331,7 @@ namespace ProxyStub {
             _adminLock.Lock();
 	    Core::ProxyType<Core::IPCChannel> channel (_channel);
             _adminLock.Unlock();
-		
+            printf("WPEFramework::ProxyStub::UnknownProxy::Message()->PID<%d><%d>calling channel->Invoke(message, waitTime)\n", getpid(), gettid());    
             if (channel.IsValid() == true) {
 	            result = channel->Invoke(message, waitTime);
 	
@@ -340,7 +351,7 @@ namespace ProxyStub {
             uint32_t result = Core::ERROR_NONE;
 
             _adminLock.Lock();
-
+            printf("WPEFramework::ProxyStub::UnknownProxy::Complete()->PID<%d><%d>impl<0x%x>id<%d>\n", getpid(), gettid(), impl, id);
             if (_channel.IsValid() == true) {
                 if (how == RPC::Data::Output::mode::CACHED_ADDREF) {
                     // Just AddRef this implementation
@@ -383,7 +394,7 @@ namespace ProxyStub {
             uint32_t result = Release();
 
             _adminLock.Lock();
-
+            printf("WPEFramework::ProxyStub::UnknownProxy::Complete()->PID<%d><%d>\n", getpid(), gettid());
             if ((_mode & CACHING_ADDREF) != 0) {
 
                 // We completed the first cycle. Clear Pending, if it was active..
@@ -414,6 +425,8 @@ namespace ProxyStub {
             uint32_t result = Release();
 
             _adminLock.Lock();
+
+            printf("WPEFramework::ProxyStub::UnknownProxy::Complete()->PID<%d><%d>\n", getpid(), gettid());
 
             if ((_mode & CACHING_ADDREF) != 0) {
                 _mode ^= CACHING_ADDREF;
@@ -477,18 +490,22 @@ namespace ProxyStub {
         // -------------------------------------------------------------------------------------------------------------------------------
         IPCMessage Message(const uint8_t methodId) const
         {
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::Message()->PID<%d><%d> calling _unknown.Message(methodId)\n", getpid(), gettid());
             return (_unknown.Message(methodId));
         }
         uint32_t Invoke(Core::ProxyType<RPC::InvokeMessage>& message, const uint32_t waitTime = RPC::CommunicationTimeOut) const
         {
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::Invoke()->PID<%d><%d> calling unknown.Invoke()\n", getpid(), gettid());
             return (_unknown.Invoke(message, waitTime));
         }
         void* Interface(const Core::instance_id& implementation, const uint32_t id) const
         {
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::Interface()->PID<%d><%d> calling unknown.Interface()\n", getpid(), gettid());
             return (_unknown.Interface(implementation, id));
         }
         uint32_t Complete(const Core::instance_id& instance, const uint32_t id, const RPC::Data::Output::mode how)
         {
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::Complete()->PID<%d><%d> calling unknown.Complete()\n", getpid(), gettid());
             return (_unknown.Complete(instance, id, how));
         }
 
@@ -497,10 +514,12 @@ namespace ProxyStub {
         // -------------------------------------------------------------------------------------------------------------------------------
         uint32_t AddRef() const override
         {
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::AddRef()->PID<%d><%d> calling _unknown.AddRef()\n", getpid(), gettid());
             return (_unknown.AddRef());
         }
         uint32_t Release() const override
         {
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::Release()->PID<%d><%d> calling _unknown.Release()\n", getpid(), gettid());
             uint32_t result = _unknown.Release();
 
             if (result == Core::ERROR_DESTRUCTION_SUCCEEDED) {
@@ -513,15 +532,19 @@ namespace ProxyStub {
         {
             void* result = nullptr;
 
+            printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface()->PID<%d><%d>interfaceNumber<%d>\n", getpid(), gettid(), interfaceNumber);
             if (interfaceNumber == INTERFACE::ID) {
+                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(INTERFACE::ID)->PID<%d><%d>calling _unknown.AddRef()\n", getpid(), gettid());
                 // Just AddRef and return..
                 _unknown.AddRef();
                 result = static_cast<INTERFACE*>(this);
             } else if (interfaceNumber == Core::IUnknown::ID) {
+                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(Core::IUnknown::ID)->PID<%d><%d>calling _unknown.AddRef()\n", getpid(), gettid());
                 // Just AddRef and return..
                 _unknown.AddRef();
                 result = static_cast<Core::IUnknown*>(this);
             } else {
+                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(Core::IUnknown::ID)->PID<%d><%d>calling _unknown.RemoteInterface(interfaceNumber)\n", getpid(), gettid());
                 result = _unknown.RemoteInterface(interfaceNumber);
             }
 

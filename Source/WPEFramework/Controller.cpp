@@ -76,9 +76,11 @@ namespace Plugin {
         ASSERT(_service == nullptr);
         ASSERT(_probe == nullptr);
 
+        printf("WPEFramework::Plugin::Controller::Initialize()-<PID<%d><%d>\n", getpid(), gettid());
         _resumes.clear();
         _service = service;
         
+        printf("WPEFramework::Plugin::Controller::Initialize()-<PID<%d><%d>calling RPC::ConnectorController::Instance().Announce()\n", getpid(), gettid());
         RPC::ConnectorController::Instance().Announce(service);
         
         _skipURL = static_cast<uint8_t>(_service->WebPrefix().length());
@@ -134,7 +136,7 @@ namespace Plugin {
         Exchange::Controller::JSystemManagement::Register(*this, this);
         Exchange::Controller::JLifeTime::Register(*this, this);
         Exchange::Controller::JMetadata::Register(*this, this);
-
+        printf("WPEFramework::Plugin::Controller::Initialize()-<PID<%d><%d>return \n", getpid(), gettid());
         // On succes return a name as a Callsign to be used in the URL, after the "service"prefix
         return (_T(""));
     }
@@ -182,7 +184,7 @@ namespace Plugin {
     /* virtual */ void Controller::Inbound(Web::Request& request)
     {
         ASSERT(request.HasBody() == false);
-
+        printf("WPEFramework::Plugin::Controller::Inbound()-<PID<%d><%d>\n", getpid(), gettid());
         if (request.Verb == Web::Request::HTTP_POST) {
             request.Body(PluginHost::IFactories::Instance().JSONRPC());
         } else if (request.Verb == Web::Request::HTTP_PUT) {
@@ -203,6 +205,7 @@ namespace Plugin {
 
         TRACE(Trace::Information, (string(_T("Received request"))));
 
+        printf("WPEFramework::Plugin::Controller::Process()-<PID<%d><%d>\n", getpid(), gettid());
         Core::ProxyType<Web::Response> result;
         Core::TextSegmentIterator index(Core::TextFragment(request.Path, _skipURL, static_cast<uint32_t>(request.Path.length()) - _skipURL), false, '/');
 
@@ -211,18 +214,22 @@ namespace Plugin {
 
         // For now, whatever the URL, we will just, on a get, drop all info we have
         if (request.Verb == Web::Request::HTTP_POST) {
+            printf("WPEFramework::Plugin::Controller::Process( request.Verb == Web::Request::HTTP_POST)-<PID<%d><%d> calling PluginHost::IFactories::Instance().Response() \n", getpid(), gettid());
             result = PluginHost::IFactories::Instance().Response();
             result->ErrorCode = Web::STATUS_BAD_REQUEST;
             result->Message = _T("There are no POST handlers!");
         } else if (request.Verb == Web::Request::HTTP_GET) {
+            printf("WPEFramework::Plugin::Controller::Process( Web::Request::HTTP_GET)-<PID<%d><%d> calling GetMethod(index) \n", getpid(), gettid());
             result = GetMethod(index);
         } else if (request.Verb == Web::Request::HTTP_PUT) {
+            printf("WPEFramework::Plugin::Controller::Process( Web::Request::HTTP_PUT)-<PID<%d><%d> calling PutMethod(index) \n", getpid(), gettid());
             result = PutMethod(index, request);
         } else if (request.Verb == Web::Request::HTTP_DELETE) {
+            printf("WPEFramework::Plugin::Controller::Process( Web::Request::HTTP_DELETE)-<PID<%d><%d> calling DeleteMethod(index) \n", getpid(), gettid());
             // Time to remove a plugin, indicated by Current.
             result = DeleteMethod(index, request);
         }
-
+        printf("WPEFramework::Plugin::Controller::Process()-<PID<%d><%d>result<%s> return \n", getpid(), gettid(), result->Message.c_str());
         return (result);
     }
 
@@ -735,7 +742,7 @@ namespace Plugin {
 #endif
         Core::JSON::ArrayType<SubsystemsData> responseJsonRpc;
         PluginHost::ISubSystem* subSystem = _service->SubSystems();
-
+        printf(" WPEFramework::Plugin::Controller::SubSystems()->PID<%d><%d>\n", getpid(), gettid());
         // Now prepare a message for the Javascript world.
         bool sendReport = false;
         uint8_t index(0);
@@ -784,6 +791,7 @@ namespace Plugin {
     }
 
     uint32_t Controller::Validate(const string& token, const string& method, const string& paramaters) const /* override */ {
+        printf(" WPEFramework::Plugin::Controller::Validate()->PID<%d><%d> method<%s>\n", getpid(), gettid(), method.c_str());
         return(PluginHost::JSONRPC::Validate(token, Core::JSONRPC::Message::Method(method), paramaters));
     }
 
@@ -792,11 +800,15 @@ namespace Plugin {
         Core::hresult result = Core::ERROR_BAD_REQUEST;
         string callsign(Core::JSONRPC::Message::Callsign(method));
 
+        printf("WPEFramework::Plugin::Controller::Invoke()->PID<%d><%d>\n", getpid(), gettid());
+
         if (callsign.empty() || (callsign == PluginHost::JSONRPC::Callsign())) {
+            printf("WPEFramework::Plugin::Controller::Invoke()->PID<%d><%d> calling PluginHost::JSONRPC::Invoke(method<%s>)\n", getpid(), gettid(), method.c_str());
             result = PluginHost::JSONRPC::Invoke(channelId, id, token, method, parameters, response);
         }
         else {
             Core::ProxyType<PluginHost::IShell> service;
+            printf("WPEFramework::Plugin::Controller::Invoke()->PID<%d><%d> getting service based on callsign<%s>\n", getpid(), gettid(), callsign.c_str());
             result = _pluginServer->Services().FromIdentifier(callsign, service);
 
             if (result == Core::ERROR_NONE) {
@@ -818,6 +830,7 @@ namespace Plugin {
                         ASSERT(localDispatcher != nullptr);
 
                         if (localDispatcher != nullptr) {
+                            printf("WPEFramework::Plugin::Controller::Invoke()->PID<%d><%d> calling localDispatcher->Invoke()\n", getpid(), gettid());
                             result = localDispatcher->Invoke(channelId, id, token, Core::JSONRPC::Message::VersionedFullMethod(method), parameters, response);
                         }
                         dispatcher->Release();
@@ -825,7 +838,7 @@ namespace Plugin {
                 }
             }
         }
-
+        printf("WPEFramework::Plugin::Controller::Invoke()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 
@@ -835,6 +848,8 @@ namespace Plugin {
 
         // Make sure a sink is not registered multiple times.
         ASSERT(std::find(_observers.begin(), _observers.end(), notification) == _observers.end());
+
+        printf("WPEFramework::Plugin::Controller::Register()->PID<%d><%d> Exchange::Controller::ILifeTime::INotification* notification\n", getpid(), gettid());
 
         _observers.push_back(notification);
         notification->AddRef();
@@ -855,6 +870,7 @@ namespace Plugin {
 
         if (index != _observers.end()) {
             (*index)->Release();
+            printf("WPEFramework::Plugin::Controller::Unregister()->PID<%d><%d> Exchange::Controller::ILifeTime::INotification* notification\n", getpid(), gettid());
             _observers.erase(index);
         }
 
@@ -868,11 +884,13 @@ namespace Plugin {
         Core::hresult result = Core::ERROR_NONE;
         ASSERT(_pluginServer != nullptr);
 
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Activate()->PID<%d><%d> callsign<%s>\n", getpid(), gettid(), callsign.c_str());
         if (callsign != Callsign()) {
             Core::ProxyType<PluginHost::IShell> service;
 
             if (_pluginServer->Services().FromIdentifier(callsign, service) == Core::ERROR_NONE) {
                 ASSERT(service.IsValid());
+                printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Activate()->PID<%d><%d> calling service->Activate(PluginHost::IShell::REQUESTED) \n", getpid(), gettid());
                 result = service->Activate(PluginHost::IShell::REQUESTED);
 
                 // Normalise return code
@@ -895,7 +913,7 @@ namespace Plugin {
         Core::hresult result = Core::ERROR_NONE;
 
         ASSERT(_pluginServer != nullptr);
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Deactivate()->PID<%d><%d> callsign<%s>\n", getpid(), gettid(), callsign.c_str());
         if (callsign != Callsign()) {
             Core::ProxyType<PluginHost::IShell> service;
 
@@ -923,7 +941,7 @@ namespace Plugin {
     {
         Core::hresult result = Core::ERROR_NONE;
         ASSERT(_pluginServer != nullptr);
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Unavailable()->PID<%d><%d> callsign<%s>\n", getpid(), gettid(), callsign.c_str());
         if (callsign != Callsign()) {
             Core::ProxyType<PluginHost::IShell> service;
 
@@ -950,7 +968,7 @@ namespace Plugin {
     {
         Core::hresult result = Core::ERROR_NONE;
         ASSERT(_pluginServer != nullptr);
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Suspend()->PID<%d><%d> callsign<%s>\n", getpid(), gettid(), callsign.c_str());
         if (callsign != Callsign()) {
             Core::ProxyType<PluginHost::IShell> service;
 
@@ -981,7 +999,7 @@ namespace Plugin {
     {
         Core::hresult result = Core::ERROR_NONE;
         ASSERT(_pluginServer != nullptr);
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Resume()->PID<%d><%d> callsign<%s>\n", getpid(), gettid(), callsign.c_str());
         if (callsign != Callsign()) {
             Core::ProxyType<PluginHost::IShell> service;
 
@@ -1050,6 +1068,7 @@ namespace Plugin {
 
         Core::JSON::ArrayType<PluginHost::MetaData::Service> jsonResponse;
         Core::ProxyType<PluginHost::IShell> service;
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Status()->PID<%d><%d>\n", getpid(), gettid());
 
         ASSERT(_pluginServer != nullptr);
 
@@ -1081,6 +1100,7 @@ namespace Plugin {
         Core::JSON::ArrayType<PluginHost::CallstackData> jsonResponse;
         Core::hresult result = Core::ERROR_UNKNOWN_KEY;
 
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::CallStack()->PID<%d><%d>\n", getpid(), gettid());
         if (index.empty() == true) {
             uint8_t indexValue = Core::NumberType<uint8_t>(Core::TextFragment(index)).Value();
 
@@ -1110,7 +1130,7 @@ namespace Plugin {
         PluginHost::MetaData::Server jsonResponse;
         WorkerPoolMetaData(jsonResponse);
         jsonResponse.ToString(response);
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::ProcessInfo()->PID<%d><%d>\n", getpid(), gettid());
         return Core::ERROR_NONE;
     }
 
@@ -1119,7 +1139,7 @@ namespace Plugin {
         Core::JSON::ArrayType<SubsystemsData> jsonResponse;
 ASSERT(_service != nullptr);
         PluginHost::ISubSystem* subSystem = _service->SubSystems();
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Subsystems()->PID<%d><%d>\n", getpid(), gettid());
         if (subSystem != nullptr) {
             uint8_t i = 0;
             while (i < PluginHost::ISubSystem::END_LIST) {
@@ -1158,7 +1178,7 @@ ASSERT(_service != nullptr);
         PluginHost::MetaData::Version jsonResponse;
         _pluginServer->Metadata(jsonResponse);
         jsonResponse.ToString(response);
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::Version()->PID<%d><%d>\n", getpid(), gettid());
         return Core::ERROR_NONE;
     }
 
@@ -1167,7 +1187,7 @@ ASSERT(_service != nullptr);
         _adminLock.Lock();
 
         std::list<Exchange::Controller::ILifeTime::INotification*>::const_iterator index = _observers.begin();
-
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::NotifyStateChange()->PID<%d><%d>\n", getpid(), gettid());
         while(index != _observers.end()) {
             (*index)->StateChange(callsign, state, reason);
             index++;

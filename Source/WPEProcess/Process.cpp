@@ -73,23 +73,28 @@ POP_WARNING()
             void Dispatch() {
 
                 uint32_t instances = Core::ServiceAdministrator::Instance().Instances();
-
+                printf("WPEFramework::Process::WorkerPoolImplementation::Sink::Dispatch()->PID<%d><%d>instances<%d> \n", getpid(), gettid(), instances);
                 if (instances != 0) {
                     TRACE_L1("We still have living object [%d].", instances);
+                    printf("WPEFramework::Process::WorkerPoolImplementation::Sink::Dispatch()->PID<%d><%d>instances<%d> We still have living object \n", getpid(), gettid(), instances);
                 }
                 else {
                     
                     TRACE_L1("All living objects are killed. Time for HaraKiri!!.");
+                    printf("WPEFramework::Process::WorkerPoolImplementation::Sink::Dispatch()->PID<%d><%d>instances<%d> All living objects are killed. Time for HaraKiri!! \n", getpid(), gettid(), instances);
 
+                    printf("WPEFramework::Process::WorkerPoolImplementation::Sink::Dispatch()->PID<%d><%d> calling _parent.Stop()\n", getpid(), gettid());
                     // Seems there is no more live here, time to signal the
                     // WorkerPool to quit running and close down...
                     _parent.Stop();
                 }
             }
             void Destructed() override {
+                printf("WPEFramework::Process::WorkerPoolImplementation::Sink::Destructed()->PID<%d><%d>\n", getpid(),gettid());
                 Core::ProxyType<Core::IDispatch> job(_job.Submit());
 
                 if (job.IsValid() == true) {
+                    printf("WPEFramework::Process::WorkerPoolImplementation::Sink::Destructed()->PID<%d><%d> calling  _parent.Submit()\n", getpid(),gettid());
                     _parent.Submit(job);
                 }
             }
@@ -110,6 +115,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
             , _dispatcher(callsign)
             , _sink(*this)
         {
+            printf("WPEFramework::Process::WorkerPoolImplementation::WorkerPoolImplementation()-> PID<%d> callsign<%s>\n",  Core::ProcessInfo().Id(), callsign.c_str());
             Core::ServiceAdministrator::Instance().Callback(&_sink);
 
             if (threads > 1) {
@@ -120,14 +126,16 @@ POP_WARNING()
 
         ~WorkerPoolImplementation()
         {
+            printf("WPEFramework::Process::WorkerPoolImplementation::~WorkerPoolImplementation()->PID<%d><%d> calling Core::ServiceAdministrator::Instance().Callback(nullptr)\n", getpid(), gettid());
             Core::ServiceAdministrator::Instance().Callback(nullptr);
 
+            printf("WPEFramework::Process::WorkerPoolImplementation::~WorkerPoolImplementation()->PID<%d><%d> calling Core::WorkerPool::Stop()\n", getpid(), gettid());
             // Disable the queue so the minions can stop, even if they are processing and waiting for work..
             Core::WorkerPool::Stop();
         }
         void Run()
         {
-
+            printf("WPEFramework::Process::WorkerPoolImplementation::WorkerPoolImplementation()::Run()->PID<%d><%d>calling\n", Core::ProcessInfo().Id(), gettid());
             Core::WorkerPool::Run();
             Core::WorkerPool::Join();
         }
@@ -144,9 +152,9 @@ POP_WARNING()
         void Procedure(Core::IPCChannel& channel, Core::ProxyType<Core::IIPC>& data) override
         {
             Core::ProxyType<RPC::Job> job(RPC::Job::Instance());
-
+            printf("WPEFramework::Process::WorkerPoolImplementation::WorkerPoolImplementation()::Procedure()->PID<%d>calling job->Set(channel, data)\n", Core::ProcessInfo().Id());
             job->Set(channel, data);
-
+            printf("WPEFramework::Process::WorkerPoolImplementation::WorkerPoolImplementation()::Procedure()->PID<%d>calling WorkerPool::Submit()\n", Core::ProcessInfo().Id());
             WorkerPool::Submit(Core::ProxyType<Core::IDispatch>(job));
         }
     private:
@@ -285,6 +293,7 @@ POP_WARNING()
     {
         void* result = nullptr;
 
+        printf("WPEFramework::Process::CheckInstance()-> PID<%d><%d> className<%s> ID<%d>\n", getpid(), gettid(), className, ID);
         if (path.empty() == false) {
             Core::ServiceAdministrator& admin(Core::ServiceAdministrator::Instance());
 
@@ -295,21 +304,24 @@ POP_WARNING()
                 libraryPath = pathName + locator;
             }
 
+            printf("WPEFramework::Process::CheckInstance()->PID<%d><%d>libraryPath<%s> \n", getpid(), gettid(), libraryPath.c_str());
             Core::Library library(libraryPath.c_str());
 
+            printf("WPEFramework::Process::CheckInstance()->PID<%d><%d>library.IsLoaded<%d> \n", getpid(), gettid(), library.IsLoaded());
             if (library.IsLoaded() == true) {
+                printf("WPEFramework::Process::CheckInstance()-> PID<%d><%d> calling admin.Instantiate(library, className, version, ID)\n", getpid(), gettid());
                 // Instantiate the object
                 result = admin.Instantiate(library, className, version, ID);
             }
         }
-
+        printf("WPEFramework::Process::CheckInstance()-> PID<%d><%d> return\n", getpid(), gettid());
         return (result);
     }
 
     static void* AcquireInterfaces(ConsoleOptions& options)
     {
         void* result = nullptr;
-
+        printf("WPEFramework::Process::AcquireInterfaces()-> PID<%d><%d> Entered \n", getpid(), gettid());
         if ((options.Locator != nullptr) && (options.ClassName != nullptr)) {
             string path = (!options.SystemRootPath.empty() ? options.SystemRootPath : "") + options.PersistentPath;
             result = CheckInstance(path, options.Locator, options.ClassName, options.InterfaceId, options.Version);
@@ -331,7 +343,7 @@ POP_WARNING()
                 }
             }
         }
-
+        printf("WPEFramework::Process::AcquireInterfaces()-> PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 
@@ -457,6 +469,7 @@ public:
     }
     void Startup(const uint8_t threadCount, const Core::NodeId& remoteNode, const string& callsign)
     {
+        printf("WPEFramework::Process::ProcessFlow::Startup()-> PID<%d><%d>threadCount<%d> callsign<%s> \n", getpid(),gettid(), threadCount, callsign.c_str());
         // Seems like we have enough information, open up the Process communcication Channel.
         _engine = Core::ProxyType<Process::WorkerPoolImplementation>::Create(threadCount, Core::Thread::DefaultStackSize(), 16, callsign);
 
@@ -466,6 +479,7 @@ public:
         // Some generic object that require instantiation could come form a generic factory.
         PluginHost::IFactories::Assign(&_factories);
 
+        printf("WPEFramework::Process::ProcessFlow::Startup()-> PID<%d><%d>calling Core::ProxyType<RPC::CommunicatorClient>::Create()\n", getpid(), gettid());
         _server = (Core::ProxyType<RPC::CommunicatorClient>::Create(remoteNode, Core::ProxyType<Core::IIPCServer>(_engine)));
     }
     void Run(const string& pathName, const uint32_t interfaceId, void* base, const uint32_t sequenceId)
@@ -474,21 +488,25 @@ public:
         uint32_t waitTime (RPC::CommunicationTimeOut != Core::infinite ? 2 * RPC::CommunicationTimeOut : RPC::CommunicationTimeOut);
 
         TRACE_L1("Loading ProxyStubs from %s", (pathName.empty() == false ? pathName.c_str() : _T("<< No Proxy Stubs Loaded >>")));
-
+        printf("WPEFramework::Process::ProcessFlow::Run()->PID<%d><%d> Loading ProxyStubs from %s \n", getpid(),gettid(),(pathName.empty() == false ? pathName.c_str() : _T("<< No Proxy Stubs Loaded >>")));
         if (pathName.empty() == false) {
             Core::Directory index(pathName.c_str(), _T("*.so"));
 
             while (index.Next() == true) {
+                printf("WPEFramework::Process::ProcessFlow::Run()->PID<%d><%d>library(index.Current().c_str()<%s>) \n", getpid(), gettid(),index.Current().c_str());
                 Core::Library library(index.Current().c_str());
 
+                printf("WPEFramework::Process::ProcessFlow::Run()->PID<%d><%d>library.IsLoaded<%d> \n", getpid(), gettid(), library.IsLoaded());
                 if (library.IsLoaded() == true) {
+                    printf("WPEFramework::Process::ProcessFlow::Run()->PID<%d><%d>calling _proxyStubs.push_back(library) \n", getpid(), gettid());
                     _proxyStubs.push_back(library);
                 }
             }
         }
- 
+        printf("WPEFramework::Process::ProcessFlow::Run()-> PID<%d><%d>calling _server->Open() \n", getpid(), gettid());
         if ((result = _server->Open(waitTime, interfaceId, base, sequenceId)) == Core::ERROR_NONE) {
             TRACE_L1("Process up and running: %d.", Core::ProcessInfo().Id());
+            printf("WPEFramework::Process::ProcessFlow::Run()-> PID<%d><%d> _engine->Run() \n", getpid(), gettid());
             _engine->Run();
         } else {
             TRACE_L1("Could not open the connection, error (%d)", result);
@@ -611,14 +629,15 @@ int main(int argc, char** argv)
         if (callsign.empty() == false) {
             parentInfo += ("," + callsign);
         }
-
+        printf("WPEProcessPID_tmain()->PID<%d><%d> parentInfo<%s>\n", getpid(), gettid(), parentInfo.c_str());
         Core::SystemInfo::SetEnvironment(_T("COM_PARENT_INFO"), parentInfo);
 
         Process::ProcessFlow process;
-
+        printf("WPEProcessPID_tmain()->PID<%d><%d> create new remoteNode<%s> \n", getpid(), gettid(), options.RemoteChannel);
         Core::NodeId remoteNode(options.RemoteChannel);
 
         TRACE_L1("Opening a message file with ID: [%d].", options.Exchange);
+        printf("WPEProcessPID_tmain()->PID<%d><%d> Opening a message file with ID: [%d]\n", getpid(), gettid(), options.Exchange);
 
         // Due to the LXC container support all ID's get mapped. For the MessageBuffer, use the host given ID.
         Messaging::MessageUnit::Instance().Open(options.Exchange);
@@ -627,7 +646,7 @@ int main(int argc, char** argv)
             void* base = nullptr;
 
             TRACE_L1("Spawning a new plugin %s.", options.ClassName);
-
+            printf("WPEProcessPID_tmain()->PID<%d><%d> Spawning a new plugin %s\n", getpid(), gettid(), options.ClassName);
             // Firts make sure we apply the correct rights to our selves..
             if (options.Group != nullptr) {
                 Core::ProcessCurrent().Group(string(options.Group));
@@ -636,21 +655,23 @@ int main(int argc, char** argv)
             if (options.User != nullptr) {
                 Core::ProcessCurrent().User(string(options.User));
             }
-
+            printf("WPEProcessPID_tmain()->PID<%d><%d> process.Startup(options.Threads<%d> callsign<%s>)\n", getpid(), gettid(), options.Threads, callsign.c_str());
             process.Startup(options.Threads, remoteNode, callsign);
 
+            printf("WPEProcessPID_tmain()->PID<%d><%d> Process::AcquireInterfaces(options)\n", getpid(), gettid());
             // Register an interface to handle incoming requests for interfaces.
             if ((base = Process::AcquireInterfaces(options)) != nullptr) {
 
                 TRACE_L1("Allright time to start running");
+                printf("WPEProcessPID_tmain()->PID<%d><%d> process.Run(options.ProxyStubPath<%s>options.InterfaceId<%d>options.Exchange<%d>)\n", getpid(), gettid(), options.ProxyStubPath, options.InterfaceId, options.Exchange);
                 process.Run(options.ProxyStubPath, options.InterfaceId, base, options.Exchange);
             }
         }
-
+        printf("WPEProcessPID_tmain()->PID<%d><%d> Messaging::MessageUnit::Instance().Close())\n", getpid(), gettid());
         //close messaging unit before singletons are cleared
         Messaging::MessageUnit::Instance().Close();
     }
-
+    printf("WPEProcessPID_tmain()->PID<%d><%d> End of Process!!!!\n", getpid(), gettid());
     TRACE_L1("End of Process!!!!");
     return 0;
 }

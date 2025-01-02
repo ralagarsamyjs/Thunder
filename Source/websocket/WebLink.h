@@ -55,7 +55,7 @@ namespace Web {
             void Submit(const Core::ProxyType<OUTBOUND>& element)
             {
                 _lock.Lock();
-
+                printf("WPEFramework::Web::NoTransform> inline void WPEFramework::Web::WebLinkType<...>::SerializerImpl::Submit()->PID<%d><%d>\n", getpid(), gettid());
                 _queue.Add(const_cast<Core::ProxyType<OUTBOUND>&>(element));
 
                 // See if we need to push the first one..

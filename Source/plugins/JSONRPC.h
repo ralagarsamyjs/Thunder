@@ -445,6 +445,7 @@ namespace PluginHost {
             }
             else if (handler->Exists(realMethod) == Core::ERROR_NONE) {
                 Core::JSONRPC::Context context(channelId, id, token);
+                printf("WPEFramework::PluginHost::JSONRPC::Invoke()->PID<%d><%d> realMethod<%s>\n", getpid(), gettid(), realMethod.c_str());
                 result = handler->Invoke(context, Core::JSONRPC::Message::FullMethod(method), parameters, response);
             }
             return (result);
@@ -466,7 +467,7 @@ namespace PluginHost {
             uint32_t result = Core::ERROR_INCORRECT_URL;
 
             ASSERT(Core::JSONRPC::Message::Callsign(method).empty() || (Core::JSONRPC::Message::Callsign(method) == _callsign));
-
+            printf("WPEFramework::PluginHost::JSONRPC::Invoke()->PID<%d><%d> channelId<%d>\n", getpid(), gettid(), channelId);
             // Seems we are on the right handler..
             // now see if someone supports this version
             string realMethod(Core::JSONRPC::Message::Method(method));
@@ -494,6 +495,7 @@ namespace PluginHost {
                 }
             }
             else {
+                printf("WPEFramework::PluginHost::JSONRPC::Invoke()->PID<%d><%d> channelId<%d> calling invoke(method<%s>)\n", getpid(), gettid(), channelId, method.c_str());
                 result = Invoke(this, channelId, id, token, method, parameters, response);
             }
 

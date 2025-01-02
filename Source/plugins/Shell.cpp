@@ -63,6 +63,7 @@ namespace PluginHost
         pid = 0;
         void* result = nullptr;
         Plugin::Config::RootConfig rootConfig(this);
+        printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d>className<%s>\n", getpid(), gettid(), className.c_str());
 
         // Note: when both new and old not set this one will revert to the old default which was inprocess 
         //       when both set the Old one is ignored
@@ -70,7 +71,7 @@ namespace PluginHost
              ((  rootConfig.Mode.IsSet() ) && ( rootConfig.Mode == Plugin::Config::RootConfig::ModeType::OFF )) ) { 
 
             string locator(rootConfig.Locator.Value());
-
+            printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d>locator<%s> Plugin::Config::RootConfig::ModeType::OFF\n", getpid(), gettid(), locator.c_str());
             if (locator.empty() == true) {
                 result = Core::ServiceAdministrator::Instance().Instantiate(Core::Library(), className.c_str(), version, interface);
             } else {
@@ -82,6 +83,7 @@ namespace PluginHost
 
                         Core::Library resource = Core::ServiceAdministrator::Instance().LoadLibrary(index->c_str());
                         if (resource.IsLoaded())
+                            printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d> calling Core::ServiceAdministrator::Instance().Instantiate()\n", getpid(), gettid());
                             result = Core::ServiceAdministrator::Instance().Instantiate(
                                 resource,
                                 className.c_str(),
@@ -97,11 +99,13 @@ namespace PluginHost
             // This method can only be used in the main process. Only this process, can instantiate a new process
             ASSERT(handler != nullptr);
 
+            printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d> outofprocess \n", getpid(), gettid());
             if (handler != nullptr) {
                 string locator(rootConfig.Locator.Value());
                 if (locator.empty() == true) {
                     locator = Locator();
                 }
+                printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d> locator<%s> \n", getpid(), gettid(), locator.c_str());
                 RPC::Object definition(locator,
                     className,
                     Callsign(),
@@ -115,11 +119,11 @@ namespace PluginHost
                     SystemRootPath(),
                     rootConfig.RemoteAddress.Value(),
                     rootConfig.Configuration.Value());
-
+                printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d> calling handler->Instantiate() \n", getpid(), gettid());
                 result = handler->Instantiate(definition, waitTime, pid);
             }
         }
-
+        printf("WPEFramework::PluginHost::IShell::Root()->PID<%d><%d> return proxystub/service interface\n", getpid(), gettid());
         return (result);
     }
 }

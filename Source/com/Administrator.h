@@ -125,6 +125,7 @@ namespace RPC {
 
             ProxyStub::UnknownProxy* CreateProxy(const Core::ProxyType<Core::IPCChannel>& channel, const Core::instance_id& implementation, const bool remoteRefCounted) override
             {
+                printf("WPEFramework::RPC::Administrator::ProxyType<...>::CreateProxy()->PID<%d><%d> new PROXY<%s> \n", getpid(), gettid(), (Core::ClassNameOnly(typeid(PROXY).name()).Text()).c_str());
                 return (new PROXY(channel, implementation, remoteRefCounted))->Administration();
             }
         };
@@ -150,7 +151,7 @@ namespace RPC {
         template<typename ACTION>
         void Visit(ACTION&& action) const {
             _adminLock.Lock();
-
+            printf("WPEFramework::RPC::Administrator::Visit()->PID<%d><%d> \n", getpid(), gettid());
             for (const auto& entry : _channelProxyMap) {
                 if (entry.second.empty() == false) {
                     action(entry.second);
@@ -166,7 +167,11 @@ namespace RPC {
         void Announce()
         {
             _adminLock.Lock();
-
+            printf("WPEFramework::RPC::Administrator::Announce()->PID<%d><%d> ACTUALINTERFACE<%s> PROXY<%s> STUB<%s> Interface (stub) %d, gets registered!!! \n", getpid(), gettid(),
+            (Core::ClassNameOnly(typeid(ACTUALINTERFACE).name()).Text()).c_str(),
+            (Core::ClassNameOnly(typeid(PROXY).name()).Text()).c_str(),
+            (Core::ClassNameOnly(typeid(STUB).name()).Text()).c_str(),
+            ACTUALINTERFACE::ID);
 #ifdef __DEBUG__
             if (_stubs.find(ACTUALINTERFACE::ID) != _stubs.end()) {
                 TRACE_L1("Interface (stub) %d, gets registered multiple times !!!", ACTUALINTERFACE::ID);
@@ -187,6 +192,7 @@ namespace RPC {
             _adminLock.Lock();
 
             std::map<uint32_t, ProxyStub::UnknownStub*>::iterator stub(_stubs.find(ACTUALINTERFACE::ID));
+            printf("WPEFramework::RPC::Administrator::Recall()->PID<%d><%d> ACTUALINTERFACE<%s> Interface (stub) %d, gets unregistered!!! \n", getpid(), gettid(),(Core::ClassNameOnly(typeid(ACTUALINTERFACE).name()).Text()).c_str(),ACTUALINTERFACE::ID);
             if (stub != _stubs.end()) {
                 delete stub->second;
                 _stubs.erase(ACTUALINTERFACE::ID);
@@ -207,6 +213,7 @@ namespace RPC {
 
         Core::ProxyType<InvokeMessage> Message()
         {
+            printf("WPEFramework::RPC::Administrator::Message()->PID<%d><%d> \n", getpid(), gettid());
             return (_factory.Element());
         }
 
@@ -216,6 +223,7 @@ namespace RPC {
         ACTUALINTERFACE* ProxyFind(const Core::ProxyType<Core::IPCChannel>& channel, const Core::instance_id& impl)
         {
             ACTUALINTERFACE* result = nullptr;
+            std::cout<<"Administrator::ProxyFind()-> entered "<<std::endl;
             ProxyFind(channel, impl, ACTUALINTERFACE::ID, result);
             return (result);
         }
@@ -225,7 +233,9 @@ namespace RPC {
         ProxyStub::UnknownProxy* ProxyInstance(const Core::ProxyType<Core::IPCChannel>& channel, const Core::instance_id& impl, const bool outbound, ACTUALINTERFACE*& base)
         {
             void* proxyInterface;
+            printf("WPEFramework::RPC::Administrator::ProxyInstance()->PID<%d><%d> impl<0x%8x>outbound<%d> base<0x%8x> ACTUALINTERFACE<%s>\n", getpid(), gettid(), impl,outbound, base, (Core::ClassNameOnly(typeid(ACTUALINTERFACE).name()).Text()).c_str());
             ProxyStub::UnknownProxy* result = ProxyInstance(channel, impl, outbound, ACTUALINTERFACE::ID, proxyInterface);
+            printf("WPEFramework::RPC::Administrator::ProxyInstance()->PID<%d><%d> proxyInterface<%p>ACTUALINTERFACE::ID<%d>\n", getpid(), gettid(), proxyInterface, ACTUALINTERFACE::ID);
             base = reinterpret_cast<ACTUALINTERFACE*>(proxyInterface);
             return (result);
         }
@@ -252,17 +262,20 @@ namespace RPC {
         template <typename ACTUALINTERFACE>
         void RegisterInterface(Core::ProxyType<Core::IPCChannel>& channel, ACTUALINTERFACE* reference)
         {
+            printf("Administrator::RegisterInterface(ACTUALINTERFACE)->PID<%d><%d> calling  RegisterInterface()\n", getpid(), gettid());
             RegisterInterface(channel, reference, ACTUALINTERFACE::ID);
         }
         void RegisterInterface(Core::ProxyType<Core::IPCChannel>& channel, const void* source, const uint32_t id)
         {
+            printf("Administrator::RegisterInterface(channel, source, id)->PID<%d><%d> interfaceid<%d>\n", getpid(), gettid(), id);
+            printf("Administrator::RegisterInterface(channel, source, id)->PID<%d><%d> interfaceid<%d> calling RegisterUnknownInterface()\n", getpid(),gettid(), id);
             RegisterUnknownInterface(channel, Convert(const_cast<void*>(source), id), id);
         }
 
         void UnregisterInterface(Core::ProxyType<Core::IPCChannel>& channel, const Core::IUnknown* source, const uint32_t interfaceId, const uint32_t dropCount)
         {
             _adminLock.Lock();
-
+            printf("Administrator::UnregisterInterface(channel, source, interfaceId, dropCount)->PID<%d><%d>dropCount<%d>interfaceId<%d> \n", getpid(), gettid(), dropCount, interfaceId);
             ReferenceMap::iterator index(_channelReferenceMap.find(channel->LinkId()));
 
             if (index != _channelReferenceMap.end()) {
@@ -280,6 +293,7 @@ namespace RPC {
                         if (index->second.size() == 0) {
                             _channelReferenceMap.erase(index);
                             TRACE_L3("Unregistered interface %p(%u).", source, interfaceId);
+                            printf("WPEFramework::RPC::Administrator::UnregisterInterface()->PID<%d><%d> Unregistered interface %p(%u) \n", getpid(), gettid(), source, interfaceId);
                         }
                     }
                 } else {
@@ -288,7 +302,7 @@ namespace RPC {
             } else {
                 printf("====> Unregistering an interface [0x%x, %d] from a non-existing channel!!!\n", interfaceId, Core::ProcessInfo().Id());
             }
-
+            printf("Administrator::UnregisterInterface(channel, source, interfaceId, dropCount)->PID<%d><%d> return \n", getpid(), gettid());
             _adminLock.Unlock();
         }
         bool UnregisterUnknownProxy(const ProxyStub::UnknownProxy& proxy);
@@ -413,24 +427,29 @@ namespace RPC {
             else {
                 identifier = Core::Format(_T("{ \"type\": \"COMRPC\", \"interface\": %d, \"method\": %d }"), message->Parameters().InterfaceId(), message->Parameters().MethodId());
             }
+            printf("WPEFramework::RPC::Job::Identifier()->PID<%d> identifier<%s>\n", getpid(), identifier.c_str());
             return (identifier);
         }
         void Dispatch() override
         {
             ASSERT(_message->Label() == InvokeMessage::Id());
-
+            printf("WPEFramework::RPC::Job::Dispatch()->PID<%d><%d> Message.Label<%d>\n", getpid(), gettid(),_message->Label());
+            printf("WPEFramework::RPC::Job::Dispatch()->PID<%d><%d> calling Invoke(_channel, _message)\n", getpid(), gettid());
             Invoke(_channel, _message);
         }
 
         static void Invoke(Core::ProxyType<Core::IPCChannel>& channel, Core::ProxyType<Core::IIPC>& data)
         {
             Core::ProxyType<InvokeMessage> message(data);
+           printf("WPEFramework::RPC::Job::Invoke()->PID<%d><%d>\n", getpid(), gettid());
             ASSERT(message.IsValid() == true);
             if (message->Parameters().IsValid() == false) {
                 SYSLOG(Logging::Error, (_T("COMRPC Announce message incorrectly formatted!")));
             }
             else {
+                printf("WPEFramework::RPC::Job::Invoke()->PID<%d><%d> calling _administrator.Invoke()\n", getpid(), gettid());
                 _administrator.Invoke(channel, message);
+                printf("WPEFramework::RPC::Job::Invoke()->PID<%d><%d> calling channel->ReportResponse(data)\n", getpid(), gettid());
                 channel->ReportResponse(data);
             }
         }
@@ -466,6 +485,7 @@ namespace RPC {
 
     public:
         void Submit(const Core::ProxyType<Core::IDispatch>& job) override {
+            printf("WPEFramework::RPC::InvokeServer::Submit()->PID<%d><%d> calling _threadPoolEngine.Submit(job)\n", getpid(), gettid());
             _threadPoolEngine.Submit(job);
         }
         void Revoke(const Core::ProxyType<Core::IDispatch>& job) override {
@@ -476,8 +496,9 @@ namespace RPC {
         void Procedure(Core::IPCChannel& source, Core::ProxyType<Core::IIPC>& message) override
         {
             Core::ProxyType<Job> job(Job::Instance());
-
+            printf("WPEFramework::RPC::InvokeServer::Procedure()->PID<%d><%d><Administrator.h> calling job->Set(source, message)\n", getpid(), gettid());
             job->Set(source, message);
+            printf("WPEFramework::RPC::InvokeServer::Procedure()->PID<%d><%d><Administrator.h> calling _threadPoolEngine.Submit()\n", getpid(), gettid());
             _threadPoolEngine.Submit(Core::ProxyType<Core::IDispatch>(job));
         }
 
@@ -504,6 +525,7 @@ namespace RPC {
             void Deinitialize() override {
             }
             void Dispatch(Core::IDispatch* job) override {
+                printf("WPEFramework::RPC::InvokeServerType<THREADPOOLCOUNT, STACKSIZE, MESSAGESLOTS>::Dispatcher::Dispatch()->PID<%d><%d> calling job->Dispatch()\n", getpid(), gettid());
                 job->Dispatch();
             }
         };
@@ -525,6 +547,7 @@ namespace RPC {
             _threadPoolEngine.Stop();
         }
         void Submit(const Core::ProxyType<Core::IDispatch>& job) override {
+            printf("WPEFramework::RPC::InvokeServerType<THREADPOOLCOUNT, STACKSIZE, MESSAGESLOTS>::Submit(()->PID<%d><%d> calling _threadPoolEngine.Submit(job, Core::infinite)\n", getpid(), gettid());
             _threadPoolEngine.Submit(job, Core::infinite);
         }
         void Revoke(const Core::ProxyType<Core::IDispatch>& job) override {
@@ -548,8 +571,9 @@ namespace RPC {
             ASSERT(message->Label() == InvokeMessage::Id());
 
             Core::ProxyType<RPC::Job> job(Job::Instance());
-
+            printf("WPEFramework::RPC::InvokeServerType<...>::Procedure()->PID<%d><%d><Administrator.h>messageid<%d> calling job->Set(source, message)\n", getpid(),gettid(), message->Label());
             job->Set(source, message);
+            printf("WPEFramework::RPC::InvokeServerType<...>::Procedure()->PID<%d><%d><Administrator.h>messageid<%d> calling _threadPoolEngine.Submit()\n", getpid(), gettid(),message->Label());
             _threadPoolEngine.Submit(Core::ProxyType<Core::IDispatch>(job), Core::infinite);
         }
 

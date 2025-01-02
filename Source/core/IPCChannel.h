@@ -84,6 +84,7 @@ namespace Core {
         }
         ~IPCChannelClientType() override
         {
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::~IPCChannelClientType()->PID<%d><%d> calling IPCChannelType<SocketPort, EXTENSION>::Source().Close(Core::infinite)\n", getpid(), gettid());
             IPCChannelType<SocketPort, EXTENSION>::Source().Close(Core::infinite);
 
             if (INTERNALFACTORY == true) {
@@ -94,10 +95,12 @@ namespace Core {
     public:
         uint32_t Open(const uint32_t waitTime)
         {
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::Open()->PID<%d><%d> calling BaseClass::Source().Open(waitTime<%d>)\n", getpid(), gettid(), waitTime);
             return (BaseClass::Source().Open(waitTime));
         }
         uint32_t Close(const uint32_t waitTime)
         {
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::Close()->PID<%d><%d> calling BaseClass::Source().Close(waitTime<%d>)\n", getpid(), gettid(), waitTime);
             return (BaseClass::Source().Close(waitTime));
         }
         bool IsOpen() const
@@ -133,15 +136,17 @@ namespace Core {
     protected:
         void StateChange() override
         {
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d> calling BaseClass::StateChange()\n", getpid(), gettid());
             // Do not forget to call the base...
             BaseClass::StateChange();
-
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d>\n", getpid(), gettid());
             StateChange(TemplateIntToType<LISTENING>());
         }
 
     private:
         void StateChange(const TemplateIntToType<true>&)
         {
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d>\n", getpid(), gettid());
             if ((BaseClass::Source().HasError() == true) && (BaseClass::Source().IsListening() == false)) {
 
                 TRACE_L1("Error on socket. Not much we can do except for closing up, Try to recover. (%d)", BaseClass::Source().State());
@@ -149,6 +154,7 @@ namespace Core {
                 BaseClass::Source().Close(0);
             } else if ((BaseClass::Source().Type() == SocketPort::LISTEN) && (BaseClass::Source().IsForcedClosing() == false) && (BaseClass::Source().IsSuspended() == false)) {
                 if (BaseClass::Source().IsListening() == true) {
+                    printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d> BaseClass::Source().Accept()\n", getpid(), gettid());
                     // This potentially means, we have a new connection coming in, swap..
                     NodeId remoteHost = BaseClass::Source().Accept();
 
@@ -158,7 +164,7 @@ namespace Core {
                 } else {
                     // If we did not request the close, we can move back to Listening on this socket..
                     TRACE_L1("Moving into listening mode. (%d)", 0);
-
+                    printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d> Moving into listening mode.\n", getpid(), gettid());
                     // Oops this means we are closed. Try to get a new connection.
                     BaseClass::Source().Listen();
                 }
@@ -166,9 +172,11 @@ namespace Core {
         }
         void StateChange(const TemplateIntToType<false>&)
         {
+            printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d>\n", getpid(), gettid());
             if (BaseClass::Source().HasError() == true) {
                 TRACE_L1("Error on socket. Not much we can do except for closing up, Try to recover. (%d)", BaseClass::Source().State());
                 // In case on an error, not much more we can do then close up..
+                printf("WPEFramework::Core::IPCChannelClientType<EXTENSION, LISTENING, INTERNALFACTORY>::StateChange()->PID<%d>TID<%d>calling BaseClass::Source().Close(0)\n", getpid(), gettid());
                 BaseClass::Source().Close(0);
             }
         }
@@ -317,7 +325,7 @@ namespace Core {
 
 			ASSERT(handler.IsValid() == true);
             ASSERT(_handlers.find(id) == _handlers.end());
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::Register()->PID<%d><%d> \n", getpid(),gettid());
             _handlers.emplace(id, handler);
 
             _adminLock.Unlock();
@@ -329,7 +337,7 @@ namespace Core {
             std::map<uint32_t, ProxyType<IIPCServer>>::iterator index(_handlers.find(id));
 
             ASSERT(index != _handlers.end());
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::Unregister()->PID<%d><%d> \n", getpid(),gettid());
             if (index != _handlers.end()) {
                 _handlers.erase(index);
             }
@@ -348,7 +356,7 @@ namespace Core {
 #else
             static_assert(INTERNALFACTORY == true, "This method can only be called if you specify an INTERNAL factory");
 #endif
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::CreateFactory()->PID<%d><%d>ACTUALELEMENT<%s> calling _factory->CreateFactory()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALELEMENT).name()).Text()).c_str());
             _factory->CreateFactory<ACTUALELEMENT>(initialSize);
         }
         template <typename ACTUALELEMENT>
@@ -360,7 +368,7 @@ namespace Core {
             ASSERT(_clients.size() == 0);
 
             static_assert(INTERNALFACTORY == true, "This method can only be called if you specify an INTERNAL factory");
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::DestroyFactory()->PID<%d><%d>ACTUALELEMENT<%s> calling _factory->DestroyFactory()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(ACTUALELEMENT).name()).Text()).c_str());
             _factory->DestroyFactory<ACTUALELEMENT>();
         }
 
@@ -368,7 +376,7 @@ namespace Core {
         {
             // Lock the list, unlock if we reach the end...
             _adminLock.Lock();
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::Invoke()->PID<%d><%d>ACTUALELEMENT<%s> calling CallRecursive \n", getpid(), gettid());
             typename Clients::iterator index(_clients.begin());
 
             return (CallRecursive(index, command, waitTime));
@@ -416,7 +424,7 @@ namespace Core {
         {
             // Make sure all handlers of the server are deattached from the client...
             std::map<uint32_t, ProxyType<IIPCServer>>::iterator index(_handlers.begin());
-
+            printf("WPEFramework::Core::IPCChannelServerType<...>::UnregisterHandlers()->PID<%d><%d> \n", getpid(), gettid());
             while (index != _handlers.end()) {
                 client->second->Unregister(index->first);
                 index++;
@@ -428,6 +436,7 @@ namespace Core {
         {
             typename Clients::iterator cleaner(_clients.begin());
 
+            printf("WPEFramework::Core::IPCChannelServerType<...>::InternalCleanup()->PID<%d><%d> \n", getpid(), gettid());
             while (cleaner != _clients.end()) {
                 if (cleaner->second->IsClosed() == true) {
                     UnregisterHandlers(cleaner);
@@ -442,6 +451,7 @@ namespace Core {
             uint32_t result = Core::ERROR_NONE;
 
             _adminLock.Lock();
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::CloseClients()->PID<%d><%d> \n", getpid(), gettid());
             typename Clients::iterator index(_clients.begin());
 
             while (index != _clients.end()) {
@@ -456,14 +466,14 @@ namespace Core {
 
                 index++;
             }
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::CloseClients()->PID<%d><%d> Wait till all clients have signalled that they are closed\n", getpid(), gettid());
             // Wait till all clients have signalled that they are closed.
             while (_clients.size() > 0) {
                 Core::ProxyType<Client> item(_clients.begin()->second);
 
                 if (item->Source().IsClosed() == false) {
                     _adminLock.Unlock();
-
+                    printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::CloseClients()->PID<%d><%d> SleepMs(10)\n", getpid(), gettid());
                     // Give up our slice, for the StateChange to happen..
                     SleepMs(10);
 
@@ -476,7 +486,7 @@ namespace Core {
             }
 
             _adminLock.Unlock();
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::CloseClients()->PID<%d><%d> return\n", getpid(), gettid());
             return (result);
         }
         void Accept(SOCKET& newClient, const NodeId& remoteId) override
@@ -487,6 +497,7 @@ namespace Core {
 
             ProxyType<Client> newLink(ProxyType<Client>::Create(remoteId, _bufferSize, _factory, newClient));
 
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::Accept(_clients)->PID<%d><%d> _clients.emplace()\n", getpid(), gettid());
             _clients.emplace(std::piecewise_construct, 
                                 std::forward_as_tuple(&(newLink->Extension())),
                                 std::forward_as_tuple(newLink));
@@ -494,11 +505,12 @@ namespace Core {
             // Make sure all handlers form the server are attached to the client...
             std::map<uint32_t, ProxyType<IIPCServer>>::iterator index(_handlers.begin());
 
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::Accept(_handlers)->PID<%d><%d> server are attached to the client \n", getpid(), gettid());
             while (index != _handlers.end()) {
                 newLink->Register(index->first, index->second);
                 index++;
             }
-
+            printf("WPEFramework::Core::IPCChannelServerType<EXTENSION, INTERNALFACTORY>::Accept()->PID<%d><%d> calling Added(newLink) \n", getpid(), gettid());
             Added(newLink);
 
             _adminLock.Unlock();

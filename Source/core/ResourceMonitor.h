@@ -79,6 +79,7 @@ namespace Core {
 #endif
             virtual uint32_t Worker()
             {
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::MonitorWorker::Worker()->PID<%d><%d> calling return (_parent.Worker())\n", getpid(), gettid());
                 return (_parent.Worker());
             }
 
@@ -206,7 +207,7 @@ namespace Core {
         void Register(RESOURCE& resource)
         {
             _adminLock.Lock();
-
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Register(RESOURCE &resource)->PID<%d><%d> \n", getpid(), gettid());
             // Make sure this entry is only registered once !!!
             if (std::find(_resourceList.begin(), _resourceList.end(), &resource) == _resourceList.end()) {
                 _resourceList.push_back(&resource);
@@ -219,9 +220,10 @@ namespace Core {
                     // Wait till we are at least initialized
                     _monitor->Wait(Thread::BLOCKED | Thread::STOPPED);
                 }
-
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Register(RESOURCE &resource)->PID<%d><%d> calling monitor->Run()\n", getpid(), gettid());
                 _monitor->Run();
             } else {
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Register(RESOURCE &resource)->PID<%d><%d> calling Break()\n", getpid(), gettid());
                 Break();
             }
 
@@ -230,7 +232,7 @@ namespace Core {
         void Unregister(RESOURCE& resource)
         {
             _adminLock.Lock();
-
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Unregister(RESOURCE &resource)->PID<%d><%d> \n", getpid(), gettid());
             // Make sure this entry does not exist, only register resources once !!!
             typename std::list<RESOURCE*>::iterator index(std::find(_resourceList.begin(), _resourceList.end(), &resource));
 
@@ -254,6 +256,7 @@ namespace Core {
                 _signalNode,
                 _signalNode.Size());
 #elif defined(__LINUX__)
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Break()->PID<%d><%d> calling _monitor->Signal(SIGUSR2)\n", getpid(), gettid());
             _monitor->Signal(SIGUSR2);
 #elif defined(__WINDOWS__)
             ::WSASetEvent(_action);
@@ -345,12 +348,12 @@ namespace Core {
         uint32_t Worker()
         {
             uint32_t delay = 0;
-
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>RESOURCE<%s>WATCHDOG<%s>\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(RESOURCE).name()).Text()).c_str(), (Core::ClassNameOnly(typeid(WATCHDOG).name()).Text()).c_str());
             _monitorRuns++;
-
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>_monitorRuns<%d> calling _adminLock.Lock()\n", getpid(), gettid(), _monitorRuns);
             // Add entries not in the Array before we start !!!
             _adminLock.Lock();
-
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>_monitorRuns<%d> Do we have enough space to allocate all file descriptors\n", getpid(), gettid(), _monitorRuns);
             // Do we have enough space to allocate all file descriptors ?
             if ((_resourceList.size() + 1) > _descriptorArrayLength) {
                 _descriptorArrayLength = ((((_resourceList.size() + 1) / FileDescriptorAllocation) + 1) * FileDescriptorAllocation);
@@ -368,12 +371,13 @@ namespace Core {
             int filledFileDescriptors = 1;
             typename std::list<RESOURCE*>::iterator index = _resourceList.begin();
 
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>_monitorRuns<%d> Fill in all entries required/updated\n", getpid(), gettid(), _monitorRuns);
             // Fill in all entries required/updated..
             while (index != _resourceList.end()) {
                 RESOURCE* entry = (*index);
 
                 uint16_t events;
-
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>filledFileDescriptors<%d> calling entry->Events()\n", getpid(), gettid(), filledFileDescriptors);
                 if ((entry == nullptr) || ((events = entry->Events()) == 0)) {
                     index = _resourceList.erase(index);
                 } else {
@@ -387,7 +391,7 @@ namespace Core {
 
             if (filledFileDescriptors > 1) {
                 _adminLock.Unlock();
-
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>_monitorRuns<%d> poll(_descriptorArray, filledFileDescriptors, -1)\n", getpid(), gettid(), _monitorRuns);
                 int result = poll(_descriptorArray, filledFileDescriptors, -1);
 
                 _adminLock.Lock();
@@ -402,6 +406,7 @@ namespace Core {
                     /* We have a valid signal, read the info from the fd */
                     struct signalfd_siginfo info;
 #endif
+                    printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>_monitorRuns<%d>  read(_signalDescriptor, &info, sizeof(info))\n", getpid(), gettid(), _monitorRuns);
                     uint32_t VARIABLE_IS_NOT_USED bytes = read(_signalDescriptor, &info, sizeof(info));
                     ASSERT(bytes == sizeof(info) || bytes == 0);
                 }
@@ -410,7 +415,7 @@ namespace Core {
                 // We also know that once a file descriptor is not found, we handled them all...
                 int fd_index = 1;
                 index = _resourceList.begin();
-
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>_monitorRuns<%d>  _resourceList<%ld>\n", getpid(), gettid(), _monitorRuns, _resourceList.size());
                 while (fd_index < filledFileDescriptors) {
                     ASSERT(index != _resourceList.end());
 
@@ -426,7 +431,7 @@ namespace Core {
                         uint16_t flagsSet = _descriptorArray[fd_index].revents;
 
                         Arm();
-
+                        printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>fd_index<%d>calling entry->Handle(flagsSet)\n", getpid(), gettid(), fd_index);
                         // Event if the flagsSet == 0, call handle, maybe a break was issued by this RESOURCE..
                         entry->Handle(flagsSet);
 
@@ -437,12 +442,13 @@ namespace Core {
                     fd_index++;
                 }
             } else {
+                printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d> _monitor->Block() \n", getpid(), gettid());
                 _monitor->Block();
                 delay = Core::infinite;
             }
 
             _adminLock.Unlock();
-
+            printf("WPEFramework::Core::ResourceMonitorType<RESOURCE, WATCHDOG>::Worker()->PID<%d><%d>delay<%d> return \n", getpid(), gettid(), delay);
             return (delay);
         }
 #endif

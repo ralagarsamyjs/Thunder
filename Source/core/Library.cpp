@@ -76,6 +76,7 @@ namespace Core {
         , _error()
     {
 #ifdef __LINUX__
+        printf("WPEFramework::Core::Library::Library()->PID<%d><%d> dlopen(fileName<%s>, RTLD_LAZY) \n", getpid(), gettid(), fileName);
         void* handle = dlopen(fileName, RTLD_LAZY);
 #endif
 #ifdef __WINDOWS__
@@ -83,12 +84,14 @@ namespace Core {
 #endif
 
         if (handle != nullptr) {
+            printf("WPEFramework::Core::Library::Library()->PID<%d><%d> fileName<%s> handle != nullptr \n", getpid(), gettid(),  fileName);
             // Seems we have an dynamic library opened..
             _refCountedHandle = new RefCountedHandle;
             _refCountedHandle->_referenceCount = 1;
             _refCountedHandle->_handle = handle;
             _refCountedHandle->_name = fileName;
             TRACE_L1("Loaded library: %s", fileName);
+            printf("WPEFramework::Core::Library::Library()->PID<%d><%d> Loaded library: %s \n",getpid(), gettid(),  fileName);
         } else {
 #ifdef __LINUX__
             _error = dlerror();
@@ -162,30 +165,36 @@ namespace Core {
     {
         // Reference count the new, if it exists..
         if (_refCountedHandle != nullptr) {
+            printf("WPEFramework::Core::Library::AddRef()->PID<%d><%d>_refCountedHandle->_referenceCount<%d>name<%s> + 1\n", getpid(), gettid(), _refCountedHandle->_referenceCount, _refCountedHandle->_name.c_str());
             Core::InterlockedIncrement(_refCountedHandle->_referenceCount);
         }
     }
 
     uint32_t Library::Release()
     {
+        printf("WPEFramework::Core::Library::Release()->PID<%d><%d>\n", getpid(), gettid());
         if (_refCountedHandle != nullptr) {
             ASSERT(_refCountedHandle->_referenceCount > 0);
+            printf("WPEFramework::Core::Library::Release()->PID<%d><%d>_referenceCount<%d> _refCountedHandle->_name<%s> \n", getpid(), gettid(), _refCountedHandle->_referenceCount, _refCountedHandle->_name.c_str() );
             if (Core::InterlockedDecrement(_refCountedHandle->_referenceCount) == 0) {
 
                 ModuleUnload function = reinterpret_cast<ModuleUnload>(LoadFunction(_T("ModuleUnload")));
-
+                printf("WPEFramework::Core::Library::Release()->PID<%d><%d>_referenceCount<0>\n", getpid(), gettid());
                 if (function != nullptr) {
+                    printf("WPEFramework::Core::Library::Release()->PID<%d><%d> calling function()\n", getpid(), gettid());
                     // Cleanup class
                     function();
                 }
 
 #ifdef __LINUX__
+                printf("WPEFramework::Core::Library::Release()->PID<%d><%d> calling dlclose(_refCountedHandle->_handle)\n", getpid(), gettid());
                 dlclose(_refCountedHandle->_handle);
 #endif
 #ifdef __WINDOWS__
                 ::FreeLibrary(_refCountedHandle->_handle);
 #endif
                 TRACE_L1("Unloaded library: %s", _refCountedHandle->_name.c_str());
+                printf("WPEFramework::Core::Library::Release()->PID<%d><%d> Unloaded library: %s delete _refCountedHandle\n", getpid(), gettid(), _refCountedHandle->_name.c_str());
                 delete _refCountedHandle;
             }
             _refCountedHandle = nullptr;

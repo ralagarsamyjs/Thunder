@@ -481,8 +481,9 @@ namespace Core {
                         _stderr = 0;
                     }
                 }
-
+                printf("Current WPEFramework process: %d \n", getpid());
                 if ((*pid = fork()) == 0) {
+                    printf("Child WPEFramework process: %d \n", getpid());
                     char** actualParameters = reinterpret_cast<char**>(_parameters);
                     if (_stdin == -1) {
                         /* Close STDIN and STDOUT as we will redirect them. */
@@ -514,6 +515,7 @@ namespace Core {
                         _exit(result);
                     }
                 } else if (static_cast<int>(_PID) != -1) {
+                    printf("Parent WPEFramework process: %d \n", getpid());
                     /* Parent process... */
                     if (_stdin == -1) {
                         close(stdinfd[0]);

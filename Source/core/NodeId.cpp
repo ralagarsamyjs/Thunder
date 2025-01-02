@@ -442,6 +442,7 @@ static bool IsIPv6Address(const TCHAR hostname[]) {
 
     NodeId::NodeId(const NodeId& rInfo)
     {
+        printf("WPEFramework::Core::NodeId::NodeId()->PID<%d><%d>m_group<%d>m_isIPV6Enabled<%d>m_structInfo<%d>m_isIPV6Enabled<%d>\n", getpid(), gettid(), sizeof(m_group), sizeof(m_hostName), sizeof(m_structInfo), sizeof(m_isIPV6Enabled));
         *this = rInfo;
     }
 

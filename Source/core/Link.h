@@ -51,7 +51,7 @@ namespace Core {
             void Submit(const Core::ProxyType<OUTBOUND>& element)
             {
                 _lock.Lock();
-
+                printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SerializerImpl::Submit()->PID<%d> calling  _queue.Add()\n", getpid());
                 _queue.Add(const_cast<Core::ProxyType<OUTBOUND>&>(element));
 
                 // See if we need to push the first one..
@@ -71,19 +71,21 @@ namespace Core {
                 _lock.Lock();
 
                 ASSERT(_queue.Count() > 0);
-
+                printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SerializerImpl::Serialized()->PID<%d><%d> \n", getpid(), gettid());
                 DEBUG_VARIABLE(element);
                 ASSERT(&element == static_cast<typename OUTBOUND::BaseElement*>(&(*(_queue[0]))));
-
+                printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SerializerImpl::Serialized()->PID<%d><%d>  _parent.Send()\n", getpid(),gettid());
                 _parent.Send(_queue[0]);
 
+                printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SerializerImpl::Serialized()->PID<%d><%d>  _queue.Remove(0)\n", getpid(), gettid());
                 _queue.Remove(0);
 
                 // See if we have something else to push
                 if (_queue.Count() > 0) {
+                    printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SerializerImpl::Serialized()->PID<%d><%d>_queue.Count<%d> \n", getpid(), gettid(), _queue.Count());
                     OUTBOUND::Serializer::Submit(*(_queue[0]));
                     _lock.Unlock();
-
+                    printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SerializerImpl::Serialized()->PID<%d><%d> calling  _parent.Trigger()\n", getpid(), gettid() );
                     _parent.Trigger();
                 } else {
                     _lock.Unlock();
@@ -164,17 +166,20 @@ namespace Core {
             // Methods to extract and insert data into the socket buffers
             uint16_t SendData(uint8_t* dataFrame, const uint16_t maxSendSize) override
             {
+                printf("WPEFramework::Core::LinkType<...>::HandlerType<...>::SendData()->PID<%d><%d> calling _parent.SendData() \n", getpid(), gettid());
                 return (_parent.SendData(dataFrame, maxSendSize));
             }
 
             uint16_t ReceiveData(uint8_t* dataFrame, const uint16_t receivedSize) override
             {
+                printf("WPEFramework::Core::LinkType<...>::HandlerType<...>::ReceiveData()->PID<%d><%d> calling _parent.ReceiveData() \n", getpid(), gettid());
                 return (_parent.ReceiveData(dataFrame, receivedSize));
             }
 
             // Signal a state change, Opened, Closed or Accepted
             void StateChange() override
             {
+                printf("WPEFramework::Core::LinkType<...>::HandlerType<...>::StateChange()->PID<%d><%d> calling _parent.StateChange() \n", getpid(), gettid());
                 _parent.StateChange();
             }
 
@@ -236,6 +241,7 @@ POP_WARNING()
         // Submit an OUTBOUND object into the channel
         bool Submit(const Core::ProxyType<OUTBOUND>& element)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::Submit()->PID<%d> \n", getpid());
             if (_channel.IsOpen() == true) {
                 _serializerImpl.Submit(element);
             }
@@ -270,11 +276,13 @@ POP_WARNING()
         }
         uint16_t SendData(uint8_t* dataFrame, const uint16_t maxSendSize)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::SendData()->PID<%d><%d> calling _serializerImpl.Serialize()\n", getpid(), gettid());
             // Serialize Response
             return (_serializerImpl.Serialize(dataFrame, maxSendSize));
         }
         uint16_t ReceiveData(uint8_t* dataFrame, const uint16_t receivedSize)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::ReceiveData()->PID<%d><%d> calling _deserialiserImpl.Deserialize()\n", getpid(), gettid());
             // Deserialize Request
             return (_deserialiserImpl.Deserialize(dataFrame, receivedSize));
         }

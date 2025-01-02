@@ -637,9 +637,11 @@ namespace WPEFramework {
                 Client(const string& identifier, const uint32_t instanceId, const string& baseDirectory, const uint16_t socketPort = 0)
                     : MessageDataBufferType < DataSize, MetadataSize>(identifier, instanceId, baseDirectory, socketPort, false)
                     , _channel(Core::NodeId(MetadataName().c_str()), MetadataSize) {
+                        printf("WPEFramework::Messaging::MessageUnit::Client::Client()->PID<%d><%d> calling _channel.Open(Core::infinite)\n", getpid(), gettid());
                     _channel.Open(Core::infinite);
                 }
                 ~Client() {
+                    printf("WPEFramework::Messaging::MessageUnit::Client::~Client()->PID<%d><%d> calling _channel.Close(Core::infinite)\n", getpid(), gettid());
                     _channel.Close(Core::infinite);
                 }
 
@@ -813,6 +815,7 @@ namespace WPEFramework {
                     : BaseClass(identifier, instanceId, basePath, socketPort, true)
                     , _metaDataBuffer(parent, BaseClass::MetadataName())
                 {
+                    printf("WPEFramework::Messaging::MessageUnit::MessageDispatcher::MessageDispatcher(()->PID<%d><%d>\n", getpid(), gettid());
                 }
                 virtual ~MessageDispatcher() = default;
 
@@ -833,6 +836,7 @@ namespace WPEFramework {
                 , _settings()
                 , _direct()
             {
+                printf("WPEFramework::Messaging::MessageUnit::MessageUnit()->PID<%d><%d>\n", getpid(), gettid());
             }
 
         public:

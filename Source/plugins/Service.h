@@ -177,33 +177,40 @@ namespace PluginHost {
             if ( (plugin.Startup.IsSet() == true) && (plugin.Startup.Value() == PluginHost::IShell::startup::UNAVAILABLE) ) {
                 _state = UNAVAILABLE;
             }
+            printf("WPEFramework::PluginHost::Service::Service()->PID<%d><%d> \n", getpid(), gettid());
         }
         ~Service() override = default;
 
     public:
         string Versions() const override
         {
+            printf("WPEFramework::PluginHost::Service::Versions()->PID<%d><%d> version<%s>\n", getpid(), gettid(), _config.Configuration().Versions.Value().c_str());
             return (_config.Configuration().Versions.Value());
         }
         string Locator() const override
         {
+            printf("WPEFramework::PluginHost::Service::Locator()->PID<%d><%d> Locator<%s>\n", getpid(), gettid(), _config.Configuration().Locator.Value().c_str());
             return (_config.Configuration().Locator.Value());
         }
         string ClassName() const override
         {
+            printf("WPEFramework::PluginHost::Service::ClassName()->PID<%d><%d> ClassName<%s>\n", getpid(), gettid(), _config.Configuration().ClassName.Value().c_str());
             return (_config.Configuration().ClassName.Value());
         }
         string Callsign() const override
         {
+            printf("WPEFramework::PluginHost::Service::Callsign()->PID<%d><%d> Callsign<%s>\n", getpid(), gettid(), _config.Configuration().Callsign.Value().c_str());
             return (_config.Configuration().Callsign.Value());
         }
         string WebPrefix() const override
         {
+            printf("WPEFramework::PluginHost::Service::WebPrefix()->PID<%d><%d> WebPrefix<%s>\n", getpid(), gettid(), _config.WebPrefix().c_str());
             return (_config.WebPrefix());
         }
         string ConfigLine() const override
         {
             Core::SafeSyncType<Core::CriticalSection> sync(_adminLock);
+            printf("WPEFramework::PluginHost::Service::ConfigLine()->PID<%d><%d> ConfigLine<%s>\n", getpid(), gettid(), _config.Configuration().Configuration.Value().c_str());
             return (_config.Configuration().Configuration.Value());
         }
         Core::hresult ConfigLine(const string& newConfiguration) override
@@ -229,44 +236,54 @@ namespace PluginHost {
         }
         string PersistentPath() const override
         {
+            printf("WPEFramework::PluginHost::Service::PersistentPath()->PID<%d><%d> PersistentPath<%s>\n", getpid(), gettid(), _config.PersistentPath().c_str());
             return (_config.PersistentPath());
         }
         string VolatilePath() const override
         {
+            printf("WPEFramework::PluginHost::Service::VolatilePath()->PID<%d><%d> VolatilePath<%s>\n", getpid(), gettid(), _config.VolatilePath().c_str());
             return (_config.VolatilePath());
         }
         string DataPath() const override
         {
+            printf("WPEFramework::PluginHost::Service::DataPath()->PID<%d><%d> DataPath<%s>\n", getpid(), gettid(), _config.DataPath().c_str());
             return (_config.DataPath());
         }
         string SystemRootPath() const override
         {
+            printf("WPEFramework::PluginHost::Service::SystemRootPath()->PID<%d><%d> DataPath<%s>\n", getpid(), gettid(), _config.Configuration().SystemRootPath.Value().c_str());
             return (_config.Configuration().SystemRootPath.Value());
         }
         Core::hresult SystemRootPath(const string& systemRootPath) override
         {
+            printf("WPEFramework::PluginHost::Service::SystemRootPath(systemRootPath)->PID<%d><%d>\n", getpid(), gettid());
             _config.SystemRootPath(systemRootPath);
             return (Core::ERROR_NONE);
         }
         state State() const override
         {
+            printf("WPEFramework::PluginHost::Service::State()->PID<%d><%d>\n", getpid(), gettid());
             return (_state);
         }
         bool Resumed() const override
         {
+            printf("WPEFramework::PluginHost::Service::Resumed()->PID<%d><%d>\n", getpid(), gettid());
             return ((_config.Configuration().Resumed.IsSet() ? _config.Configuration().Resumed.Value() : (_config.Configuration().Startup.Value() == PluginHost::IShell::startup::ACTIVATED)));
         }
         Core::hresult Resumed(const bool resumed) override
         {
+            printf("WPEFramework::PluginHost::Service::Resumed(resumed)->PID<%d><%d>\n", getpid(), gettid());
             _config.Resumed(resumed);
             return (Core::ERROR_NONE);
         }
         PluginHost::IShell::startup Startup() const override
         {
+            printf("WPEFramework::PluginHost::Service::Startup()->PID<%d><%d>\n", getpid(), gettid());
             return _config.Configuration().Startup.Value();
         }
         Core::hresult Startup(const PluginHost::IShell::startup value) override
         {
+            printf("WPEFramework::PluginHost::Service::Startup(value)->PID<%d><%d>\n", getpid(), gettid());
             _config.Startup(value);
             _config.AutoStart(value == PluginHost::IShell::startup::ACTIVATED);
 
@@ -274,6 +291,7 @@ namespace PluginHost {
         }
         bool IsSupported(const uint8_t number) const override
         {
+            printf("WPEFramework::PluginHost::Service::IsSupported(value)->PID<%d><%d>\n", getpid(), gettid());
             return (_config.IsSupported(number));
         }
 
@@ -313,14 +331,17 @@ namespace PluginHost {
         }
         uint32_t StartupOrder() const
         {
+            printf("WPEFramework::PluginHost::Service::StartupOrder(value)->PID<%d><%d>\n", getpid(), gettid());
             return (_config.Configuration().StartupOrder.Value());
         }
         inline bool IsActive() const
         {
+            printf("WPEFramework::PluginHost::Service::IsActive(value)->PID<%d><%d>\n", getpid(), gettid());
             return (_state == ACTIVATED);
         }
         inline bool IsHibernated() const
         {
+            printf("WPEFramework::PluginHost::Service::IsHibernated(value)->PID<%d><%d>\n", getpid(), gettid());
             return (_state == HIBERNATED);
         }
         inline bool HasError() const

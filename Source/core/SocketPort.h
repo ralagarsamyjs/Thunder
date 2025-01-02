@@ -452,7 +452,7 @@ namespace WPEFramework {
                 {
                     SOCKET newClient;
                     NodeId remoteId;
-
+                    printf("WPEFramework::Core::SocketListner::Handler::StateChange()->PID<%d><%d> SocketPort::Accept()\n", getpid(), gettid());
                     while ((newClient = SocketPort::Accept(remoteId)) != INVALID_SOCKET) {
                         _parent.Accept(newClient, remoteId);
                     }
@@ -476,6 +476,7 @@ namespace WPEFramework {
                 : _socket(*this)
             {
                 TRACE_L5("Constructor SocketListner <%p>", (this));
+                printf("WPEFramework::Core::SocketListner::SocketListner()->PID<%d><%d> Constructor SocketListner <%p>\n", getpid(), gettid(),(this));
             }
 
         public:
@@ -483,13 +484,14 @@ namespace WPEFramework {
                 : _socket(*this, refLocalNode)
             {
                 TRACE_L5("Constructor SocketListner <%p>", (this));
+                printf("WPEFramework::Core::SocketListner::SocketListner()->PID<%d><%d> Constructor SocketListner <%p>\n", getpid(), gettid(),(this));
             }
             POP_WARNING()
 
                 virtual ~SocketListner()
             {
                 TRACE_L5("Destructor SocketListner <%p>", (this));
-
+                printf("WPEFramework::Core::SocketListner::~SocketListner()->PID<%d><%d> Destructor SocketListner <%p>\n", getpid(), gettid(),(this));
                 _socket.Close(0);
             }
 

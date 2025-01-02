@@ -333,7 +333,7 @@ namespace Web {
                 _lock.Lock();
 
                 ASSERT(_current == nullptr);
-
+                printf("WPEFramework::Web::Request::Serializer::Submit()->PID<%d>\n", getpid());
                 _current = const_cast<Request*>(&element);
 
                 _lock.Unlock();
@@ -403,7 +403,7 @@ POP_WARNING()
             inline uint16_t Deserialize(const uint8_t stream[], const uint16_t maxLength)
             {
                 _lock.Lock();
-
+                printf("WPEFramework::Web::Request::Deserializer::Deserialize()->PID<%d><%d> calling _parser.Deserialize() \n", getpid(), gettid());
                 uint16_t usedSize = _parser.Deserialize(stream, maxLength);
 
                 _lock.Unlock();

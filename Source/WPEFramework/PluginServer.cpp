@@ -200,6 +200,7 @@ namespace PluginHost
             Logging::DumpException(_T("Unknown"));
         }
     #else
+        printf("WPEFramework::PluginHost::Server::WorkerPoolImplementation::Dispatcher::Dispatch()->PID<%d><%d> calling job->Dispatch()\n", getpid(), gettid());
         job->Dispatch();
     #endif
     }
@@ -322,6 +323,7 @@ namespace PluginHost
 
         Lock();
 
+        printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> \n", getpid(), gettid());
         IShell::state currentState(State());
 
         if (currentState == IShell::state::ACTIVATION) {
@@ -338,6 +340,7 @@ namespace PluginHost
 
             // Load the interfaces, If we did not load them yet...
             if (_handler == nullptr) {
+                printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling AcquireInterfaces() \n", getpid(), gettid());
                 AcquireInterfaces();
             }
 
@@ -390,13 +393,13 @@ namespace PluginHost
                 }
 
                 TRACE(Activity, (_T("Activation plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
-
+                printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling _administrator.Initialize(callSign, this) \n", getpid(), gettid());
                 _administrator.Initialize(callSign, this);
                 
                 State(ACTIVATION);
 
                 Unlock();
-
+                printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling _handler->Initialize(this) \n", getpid(), gettid());
                 REPORT_DURATION_WARNING( { ErrorMessage(_handler->Initialize(this)); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::ACTIVATION, callSign.c_str());
 
                 if (HasError() == true) {
@@ -419,10 +422,12 @@ namespace PluginHost
                     const Core::EnumerateType<PluginHost::IShell::reason> textReason(why);
                     const string webUI(PluginHost::Service::Configuration().WebUI.Value());
                     if ((PluginHost::Service::Configuration().WebUI.IsSet()) || (webUI.empty() == false)) {
+                        printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling EnableWebServer(webUI, EMPTY_STRING) \n", getpid(), gettid());
                         EnableWebServer(webUI, EMPTY_STRING);
                     }
 
                     if (_jsonrpc != nullptr) {
+                        printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling _jsonrpc->Activate() \n", getpid(), gettid());
                         _jsonrpc->Activate(this);
                     }
 
@@ -435,19 +440,23 @@ namespace PluginHost
 
                     SYSLOG(Logging::Startup, (_T("Activated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
                     Lock();
+                    printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling State(ACTIVATED) \n", getpid(), gettid());
                     State(ACTIVATED);
+                    printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling _administrator.Activated() \n", getpid(), gettid());
                     _administrator.Activated(callSign, this);
 
 #if THUNDER_RESTFULL_API
+                    printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling _administrator.Notification(format) \n", getpid(), gettid());
                     _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"deactivated\",\"reason\":\"") + textReason.Data() + _T("\"}"));
 #endif
-
+                    printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling _administrator.Notification(PluginHost::Server::ForwardMessage) \n", getpid(), gettid());
                     _administrator.Notification(PluginHost::Server::ForwardMessage(callSign, string(_T("{\"state\":\"activated\",\"reason\":\"")) + textReason.Data() + _T("\"}")));
 
                     IStateControl* stateControl = nullptr;
                     if ((Resumed() == true) && ((stateControl = _handler->QueryInterface<PluginHost::IStateControl>()) != nullptr)) {
-
+                        printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling stateControl->Request(PluginHost::IStateControl::RESUME) \n", getpid(), gettid());
                         stateControl->Request(PluginHost::IStateControl::RESUME);
+                        printf("WPEFramework::PluginHost::Server::Service::Activate()->PID<%d><%d> calling stateControl->Release() \n", getpid(), gettid());
                         stateControl->Release();
                     }
 
@@ -881,13 +890,14 @@ namespace PluginHost
         uint32_t result = Core::ERROR_BAD_REQUEST;
         const string& serviceHeader(Configuration().WebPrefix());
         const string& JSONRPCHeader(Configuration().JSONRPCPrefix());
-
+        printf("WPEFramework::PluginHost::Server::ServiceMap::FromLocator()->PID<%d><%d>identifier<%s>\n", getpid(), gettid(), identifier.c_str());
         // Check the header (prefix part)
         if (identifier.compare(0, serviceHeader.length(), serviceHeader.c_str()) == 0) {
 
             serviceCall = true;
 
             if (identifier.length() <= (serviceHeader.length() + 1)) {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::FromLocator()->PID<%d><%d>identifier<%s> service = _server.Controller() \n", getpid(), gettid(), identifier.c_str());
                 service = _server.Controller();
                 result = Core::ERROR_NONE;
             } else {
@@ -898,6 +908,7 @@ namespace PluginHost
                 const string callSign(identifier.substr(offset, ((length = identifier.find_first_of('/', offset)) == string::npos ? string::npos : length - offset)));
 
                 if ( (result = FromIdentifier(callSign, actualService)) == Core::ERROR_NONE) {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::FromLocator()->PID<%d><%d>identifier<%s>service = Core::ProxyType<Service>(actualService) \n", getpid(), gettid(), identifier.c_str());
                     service = Core::ProxyType<Service>(actualService);
                     if (service.IsValid() == false) {
                         result = Core::ERROR_BAD_REQUEST;
@@ -909,6 +920,7 @@ namespace PluginHost
             serviceCall = false;
 
             if (identifier.length() <= (JSONRPCHeader.length() + 1)) {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::FromLocator(else if)->PID<%d><%d>identifier<%s> service = _server.Controller()\n", getpid(), gettid(), identifier.c_str());
                 service = _server.Controller();
                 result = Core::ERROR_NONE;
             } else {
@@ -919,6 +931,7 @@ namespace PluginHost
                 const string callSign(identifier.substr(offset, ((length = identifier.find_first_of('/', offset)) == string::npos ? string::npos : length - offset)));
 
                 if ((result = FromIdentifier(callSign, actualService)) == Core::ERROR_NONE) {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::FromLocator(else if)->PID<%d><%d>identifier<%s> service = Core::ProxyType<Service>(actualService)\n", getpid(), gettid(), identifier.c_str());
                     service = Core::ProxyType<Service>(actualService);
                     if (service.IsValid() == false) {
                         result = Core::ERROR_BAD_REQUEST;
@@ -926,7 +939,7 @@ namespace PluginHost
                 }
             }
         }
-
+        printf("WPEFramework::PluginHost::Server::ServiceMap::FromLocator()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 
@@ -938,6 +951,7 @@ namespace PluginHost
         , _requestClose(false)
     {
         TRACE(Activity, (_T("Construct a link with ID: [%d] to [%s]"), Id(), remoteId.QualifiedName().c_str()));
+        printf("WPEFramework::PluginHost::Server::Channel::Channel()->PID<%d><%d> Construct a link with ID: [%d] to [%s] sieof(channel)<%d> _service<%d>_parent<%d>_security<%d> \n", getpid(), gettid(),  Id(), remoteId.QualifiedName().c_str(), sizeof(*this), sizeof(this->_service), sizeof(this->_parent), sizeof(this->_security));
     }
 
     /* virtual */ Server::Channel::~Channel()
@@ -968,6 +982,8 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
         , _controller()
         , _factoriesImplementation()
     {
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> Constructor\n", getpid(), gettid());
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> IFactories::Assign(&_factoriesImplementation)\n", getpid(), gettid());
         IFactories::Assign(&_factoriesImplementation);
 
         // See if the persitent path for our-selves exist, if not we will create it :-)
@@ -977,9 +993,11 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
             Core::Directory(persistentPath.Name().c_str()).Create();
         }
 
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> Core::WorkerPool::Assign(&_dispatcher)\n", getpid(), gettid());
         // Lets assign a workerpool, we created it...
         Core::WorkerPool::Assign(&_dispatcher);
 
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling configuration.Plugins()\n", getpid(), gettid());
         Core::JSON::ArrayType<Plugin::Config>::Iterator index = configuration.Plugins();
 
         // First register all services, than if we got them, start "activating what is required.
@@ -987,12 +1005,13 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
         Plugin::Config metaDataConfig;
 
         metaDataConfig.ClassName = Core::ClassNameOnly(typeid(Plugin::Controller).name()).Text();
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d>metaDataConfig.ClassName<%s> \n", getpid(), gettid(), Core::ClassNameOnly(typeid(Plugin::Controller).name()).Text().c_str());
 
         while (index.Next() == true) {
             Plugin::Config& entry(index.Current());
 
             if ((entry.ClassName.Value().empty() == true) && (entry.Locator.Value().empty() == true)) {
-
+                printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> entry.ClassName.Value().empty / entry.Locator.Value().empty\n", getpid(), gettid());
                 // This is a definition/configuration for the Controller or an incorrect entry :-).
                 // Read and define the Controller.
                 if (metaDataConfig.Callsign.Value().empty() == true) {
@@ -1011,28 +1030,34 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
                     }
                 }
             } else {
+                printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling _services.Insert(entry.ClassName.Value<%s>Locator<%s>) \n", getpid(), gettid(), entry.ClassName.Value().c_str(), entry.Locator.Value().c_str());
                 _services.Insert(entry, Service::mode::CONFIGURED);
             }
         }
 
         if (metaDataConfig.Callsign.Value().empty() == true) {
+            printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling _defaultControllerCallsign=Controller \n", getpid(), gettid());
             // Oke, this is the first time we "initialize" it.
             metaDataConfig.Callsign = string(_defaultControllerCallsign);
         }
-
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling Load() \n", getpid(), gettid());
         // Get the configuration from the persistent location.
         Load();
 
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling _inputHandler.Initialize() \n", getpid(), gettid());
         // Create input handle
         _inputHandler.Initialize(
             configuration.Input().Type(),
             configuration.Input().Locator(),
             configuration.Input().Enabled());
 
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling Service::Initialize() \n", getpid(), gettid());
         // Initialize static message.
         Service::Initialize();
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling Channel::Initialize() \n", getpid(), gettid());
         Channel::Initialize(_config.WebPrefix());
 
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> calling  _services.Insert(_controller) \n", getpid(), gettid());
         // Add the controller as a service to the services.
         _controller = _services.Insert(metaDataConfig, Service::mode::CONFIGURED);
 
@@ -1041,12 +1066,14 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
         ProcessContainers::IContainerAdministrator& admin = ProcessContainers::IContainerAdministrator::Instance();
         admin.Logging(_config.VolatilePath(), configuration.ProcessContainersLogging());
 #endif
+        printf("WPEFramework::PluginHost::Server::Server()->PID<%d><%d> return \n", getpid(), gettid());
     }
 
 POP_WARNING()
 
     Server::~Server()
     {
+        printf("WPEFramework::PluginHost::Server::~Server()->PID<%d><%d> calling Core::WorkerPool::Assign IFactories::Assign nullptr \n", getpid(), gettid());
         // The workerpool is about to dissapear!!!!
         Core::WorkerPool::Assign(nullptr);
         IFactories::Assign(nullptr);
@@ -1069,6 +1096,7 @@ POP_WARNING()
 
     void Server::Open()
     {
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d>\n", getpid(), gettid());
         // Before we do anything with the subsystems (notifications)
         // Lets see if security is already set..
         DefaultSecurity* securityProvider = Core::Service<DefaultSecurity>::Create<DefaultSecurity>(
@@ -1076,14 +1104,17 @@ POP_WARNING()
             _config.JSONRPCPrefix(),
             _controller->Callsign());
 
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d>  _config.Security(securityProvider)\n", getpid(), gettid());
         _config.Security(securityProvider);
 
         std::vector<PluginHost::ISubSystem::subsystem> externallyControlled;
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d>  iterator(_services.Services())\n", getpid(), gettid());
         ServiceMap::Iterator iterator(_services.Services());
 
         // Load the metadata for the subsystem information..
         while (iterator.Next() == true)
         {
+            printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d>  iterator->LoadMetadata() -callsign<%s> \n", getpid(), gettid(), iterator->Callsign().c_str());
             iterator->LoadMetadata();
             for (const PluginHost::ISubSystem::subsystem& entry : iterator->SubSystemControl()) {
                 Core::EnumerateType<PluginHost::ISubSystem::subsystem> name(entry);
@@ -1099,13 +1130,15 @@ POP_WARNING()
                 }
             }
         }
-
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> _controller->Activate()\n", getpid(), gettid());
         _controller->Activate(PluginHost::IShell::STARTUP);
 
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> getting Plugin::Controller* controller\n", getpid(), gettid());
         Plugin::Controller* controller = _controller->ClassType<Plugin::Controller>();
 
         ASSERT(controller != nullptr);
 
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> controller->SetServer(this, externallyControlled)\n", getpid(), gettid());
         controller->SetServer(this, std::move(externallyControlled));
 
         if ((_services.SubSystemInfo() & (1 << ISubSystem::SECURITY)) != 0) {
@@ -1117,12 +1150,15 @@ POP_WARNING()
         }
 
         securityProvider->Release();
-
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> calling _dispatcher.Run()\n", getpid(), gettid());
         _dispatcher.Run();
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> calling Dispatcher().Open(MAX_EXTERNAL_WAITS)\n", getpid(), gettid());
         Dispatcher().Open(MAX_EXTERNAL_WAITS);
 
         // Right we have the shells for all possible services registered, time to activate what is needed :-)
         iterator.Reset(0);
+
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> sort plugins based on StartupOrder \n", getpid(), gettid());
 
         // sort plugins based on StartupOrder from configuration
         std::vector<Core::ProxyType<Service>> configured_services;
@@ -1135,6 +1171,7 @@ POP_WARNING()
             return lhs->StartupOrder() < rhs->StartupOrder();
           });
 
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> activate plugin one by one \n", getpid(), gettid());
         for (auto service : configured_services)
         {
             if (service->State() != PluginHost::Service::state::UNAVAILABLE) {
@@ -1149,10 +1186,12 @@ POP_WARNING()
                 }
             }
         }
+        printf("WPEFramework::PluginHost::Server::Open()->PID<%d><%d> return \n", getpid(), gettid());
     }
 
     void Server::Close()
     {
+        printf("WPEFramework::PluginHost::Server::Close()->PID<%d><%d>\n", getpid(), gettid());
         Plugin::Controller* destructor(_controller->ClassType<Plugin::Controller>());
         destructor->AddRef();
         _connections.Close(100);

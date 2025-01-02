@@ -662,14 +662,17 @@ namespace RPC {
         public:
             uint32_t Launch() override
             {
+                printf("Communicator::LocalProcess::Launch()->PID<%d> \n", getpid());
                 return (_process.Launch(_id));
             }
             const string& Command() const
             {
+                printf("Communicator::LocalProcess::Command()->PID<%d> \n", getpid());
                 return (_process.Command());
             }
             Core::Process::Options::Iterator Options() const
             {
+                printf("Communicator::LocalProcess::Options()->PID<%d> \n", getpid());
                 return (_process.Options());
             }
             Core::instance_id ParentPID() const override {
@@ -679,13 +682,16 @@ namespace RPC {
                 uint32_t nextinterval = 0;
                 Core::Process process(false, _process.Id());
 
+                printf("Communicator::LocalProcess::EndProcess()->PID<%d> \n", getpid());
                 if (process.IsActive() != false) {
                     switch (Cycle()) {
                     case 0:
+                        printf("Communicator::LocalProcess::EndProcess(case 0)-> calling process.Kill(false) \n");
                         process.Kill(false);
                         nextinterval = Communicator::SoftKillCheckWaitTime();
                         break;
                     default:
+                        printf("Communicator::LocalProcess::EndProcess(default)-> calling process.Kill(true) \n");
                         process.Kill(true);
                         nextinterval = Communicator::HardKillCheckWaitTime();
                         break;
@@ -880,11 +886,13 @@ namespace RPC {
                 inline void Implementation(const Core::ProxyType<Core::IPCChannel>& channel, const Core::instance_id& implementation) {
 
                     ASSERT(_interface == nullptr);
+                    printf("Communicator::RemoteConnectionMap::Implementation()->PID<%d><%d> \n", getpid(), gettid());
 
+                    printf("Communicator::RemoteConnectionMap::Implementation()->PID<%d><%d> implementation<0x%x> _id<%d> _interface<%d> calling  RPC::Administrator::Instance().ProxyInstance()\n", getpid(), gettid(), implementation, _id, _interface);
                     // Get the interface pointer that was stored during the triggering of the event...
                     // It is reference counted so it has to be dereferenced by the caller.
                     RPC::Administrator::Instance().ProxyInstance(channel, implementation, true, _id, _interface);
-
+                    printf("Communicator::RemoteConnectionMap::Implementation()->PID<%d><%d> implementation<0x%x> _id<%d> _interface<%d> calling  _event.SetEvent()\n", getpid(), gettid(), implementation, _id, _interface);
                     _event.SetEvent();
                 }
                 inline void* Interface()
@@ -913,12 +921,13 @@ namespace RPC {
                 , _connections()
                 , _parent(parent)
             {
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::RemoteConnectionMap()->PID<%d><%d> Constructor\n", getpid(), gettid());
             }
             virtual ~RemoteConnectionMap()
             {
                 // All observers should have unregistered before this map get's destroyed !!!
                 ASSERT(_observers.size() == 0);
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::~RemoteConnectionMap()->PID<%d><%d> Destructor\n", getpid(), gettid());
                 while (_observers.size() != 0) {
                     _observers.back()->Release();
                     _observers.pop_back();
@@ -926,7 +935,7 @@ namespace RPC {
 
                 // All connections must be terminated if we end up here :-)
                 ASSERT(_connections.size() == 0);
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::~RemoteConnectionMap()->PID<%d><%d> Calling Destroy()\n", getpid(), gettid());
                 Destroy();
             }
 
@@ -934,7 +943,7 @@ namespace RPC {
             inline void Register(RPC::IRemoteConnection::INotification* sink)
             {
                 ASSERT(sink != nullptr);
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Register(_observers)->PID<%d><%d> \n", getpid(), gettid());
                 if (sink != nullptr) {
 
                     _adminLock.Lock();
@@ -946,6 +955,7 @@ namespace RPC {
 
                     RemoteConnections::iterator index(_connections.begin());
 
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Register(_connections)->PID<%d><%d> Report all Active Processes sink->Activated() \n", getpid(), gettid());
                     // Report all Active Processes..
                     while (index != _connections.end()) {
                         if (index->second->IsOperational() == true) {
@@ -960,7 +970,7 @@ namespace RPC {
             inline void Unregister(const RPC::IRemoteConnection::INotification* sink)
             {
                 ASSERT(sink != nullptr);
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Unregister(_observers)->PID<%d><%d> \n", getpid(), gettid());
                 if (sink != nullptr) {
 
                     _adminLock.Lock();
@@ -984,7 +994,7 @@ namespace RPC {
                 id = 0;
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d> instance<0x%8x> calling _parent.CreateStarter(config, instance)\n", getpid(), gettid(), instance);
                 RemoteConnection* result = _parent.CreateStarter(config, instance);
 
                 ASSERT(result != nullptr);
@@ -995,7 +1005,7 @@ namespace RPC {
 
                     // A reference for putting it in the list...
                     result->AddRef();
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create(_connections)->PID<%d><%d> result->Id()<%d>result->RemoteId<%d>\n", getpid(), gettid(), result->Id(), result->RemoteId());
                     // We expect an announce interface message now...
                     _connections.insert(std::pair<uint32_t, RemoteConnection*>(result->Id(), result));
                     auto locator = _announcements.emplace(std::piecewise_construct,
@@ -1003,10 +1013,10 @@ namespace RPC {
                         std::forward_as_tuple(trigger, instance.Interface()));
 
                     _adminLock.Unlock();
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d> calling result->Launch() \n", getpid(), gettid());
                     // Start the process, and....
                     uint32_t launchResult = result->Launch();
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d>waitTime<%d> calling trigger.Lock(waitTime) \n", getpid(), gettid(), waitTime);
                     // wait for the announce message to be exchanged
                     if ((launchResult == Core::ERROR_NONE) && (trigger.Lock(waitTime) == Core::ERROR_NONE)) {
 
@@ -1018,27 +1028,28 @@ namespace RPC {
                         }
 
                     } else {
-
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d> Seems we could not start the application result->Terminate()\n", getpid(), gettid());
                         // Seems we could not start the application. Cleanout
                         result->Terminate();
                     }
 
                     _adminLock.Lock();
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d> _announcements.erase(locator.first)\n", getpid(), gettid());
                     // Kill the Event registration. We are no longer interested in what will be hapening..
                     _announcements.erase(locator.first);
 
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d> result->Release() \n", getpid(), gettid());
                     result->Release();
                 }
                 _adminLock.Unlock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Create()->PID<%d><%d> return interfaceReturned\n", getpid(), gettid());
                 return (interfaceReturned);
             }
             inline void Closed(const uint32_t id)
             {
                 // First do an activity check on all processes registered.
                 _adminLock.Lock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> id<%d>\n", getpid(), gettid(), id);
                 RemoteConnections::iterator index(_connections.find(id));
 
                 if (index == _connections.end()) {
@@ -1047,29 +1058,35 @@ namespace RPC {
 
                 } else {
                     Communicator::RemoteConnection* connection = index->second;
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling connection->AddRef()\n", getpid(), gettid());
                     connection->AddRef();
 
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling index->second->Channel()\n", getpid(), gettid());
                     // Remove any channel associated, we had.
                     Core::ProxyType<Core::IPCChannel> destructed = index->second->Channel();
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling index->second->Close()\n", getpid(), gettid());
                     index->second->Close();
 
                     Observers::iterator observer(_observers.begin());
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling _parent.Closed(destructed)\n", getpid(), gettid());
                     _parent.Closed(destructed);
 
                     while (observer != _observers.end()) {
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling (*observer)->Deactivated(index->second)\n", getpid(), gettid());
                         (*observer)->Deactivated(index->second);
                         observer++;
                     }
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling index->second->Terminate()\n", getpid(), gettid());
                     // Don't forget to close on our side as well, if it is not already closed....
                     index->second->Terminate();
 
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling index->second->Release()\n", getpid(), gettid());
                     // Release this entry, do not wait till it get's overwritten.
                     index->second->Release();
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling _connections.erase(index)\n", getpid(), gettid());
                     _connections.erase(index);
                     _adminLock.Unlock();
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Closed()->PID<%d><%d> calling connection->Release()\n", getpid(), gettid());
                     connection->Release();
                 }
             }
@@ -1078,28 +1095,32 @@ namespace RPC {
                 Communicator::RemoteConnection* result = nullptr;
 
                 _adminLock.Lock();
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Connection()->PID<%d><%d>id<%d>\n", getpid(), gettid(), id);
 
                 RemoteConnections::iterator index(_connections.find(id));
 
                 if (index != _connections.end()) {
                     result = index->second;
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Connection()->PID<%d><%d>calling result->AddRef()\n", getpid(), gettid());
                     result->AddRef();
                 }
 
                 _adminLock.Unlock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Connection()->PID<%d><%d> return result\n", getpid(), gettid());
                 return (result);
             }
             inline void Destroy()
             {
                 // First do an activity check on all processes registered.
                 _adminLock.Lock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Destroy()->PID<%d><%d> _connections.size<%d>\n", getpid(), gettid(), _connections.size());
                 while (_connections.size() > 0) {
                     TRACE_L1("Forcefully closing open RPC Server connection: %d", _connections.begin()->second->Id());
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Destroy()->PID<%d><%d>ConnectionId<%d> calling Terminate()\n", getpid(), gettid(), _connections.begin()->second->Id());    
                     _connections.begin()->second->Terminate();
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Destroy()->PID<%d><%d>ConnectionId<%d> calling Release()\n", getpid(), gettid(), _connections.begin()->second->Id());    
                     _connections.begin()->second->Release();
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Destroy()->PID<%d><%d> calling erase()\n", getpid(), gettid());    
                     _connections.erase(_connections.begin());
                 }
 
@@ -1110,11 +1131,11 @@ namespace RPC {
                 void* result = nullptr;
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d>\n", getpid(), gettid());
                 response.Action(Data::Output::NONE);
 
                 if (info.IsRequested() == true) {
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d>calling Request(channel, info)\n", getpid(), gettid());
                     Request(channel, info);
                 } else {
 
@@ -1142,14 +1163,16 @@ namespace RPC {
                 }
 
                 _adminLock.Unlock();
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d> return\n", getpid(), gettid());
                 return (result);
             }
             void Terminated(RPC::IRemoteConnection* connection)
             {
                 _adminLock.Lock();
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Terminated()->PID<%d><%d> Entered\n", getpid(), gettid());
                 Observers::iterator index(_observers.begin());
                 while (index != _observers.end()) {
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Terminated()->PID<%d><%d> calling(*index)->Terminated(connection)\n", getpid(), gettid());
                     (*index)->Terminated(connection);
                     index++;
                 }
@@ -1169,14 +1192,17 @@ namespace RPC {
             {
                RemoteConnections::iterator index(_connections.find(info.ExchangeId()));
 
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Request()->PID<%d><%d> Entered \n", getpid(), gettid());
                 ASSERT(index != _connections.end());
                 ASSERT(index->second->IsOperational() == false);
 
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Request()->PID<%d><%d> calling index->second->Open() \n", getpid(), gettid());
                 // This is when we requested this interface/object to be created, there must be already an
                 // administration, it is just not complete.... yet!!!!
                 index->second->Open(channel, info.Id());
                 channel->Extension().Link(*this, index->second->Id());
 
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Request()->PID<%d><%d> calling Activated(index->second) \n", getpid(), gettid());
                 Activated(index->second);
 
                 auto processConnection = _announcements.find(index->second->Id());
@@ -1186,7 +1212,7 @@ namespace RPC {
                     Core::ProxyType<Core::IPCChannel> baseChannel(channel);
 
                     ASSERT(info.Implementation());
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Request()->PID<%d><%d> calling processConnection->second.Implementation() \n", getpid(), gettid());
                     processConnection->second.Implementation(baseChannel, info.Implementation());
                 } else {
                     // No one picks it up, release it..
@@ -1200,12 +1226,12 @@ namespace RPC {
                 ASSERT(baseChannel.IsValid() == true);
 
                 void* result = nullptr;
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle()->PID<%d><%d> Entered\n", getpid(), gettid());
                 if (info.IsOffer() == true) {
 
                     Core::instance_id implementation = info.Implementation();
                     ASSERT(implementation != 0);
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.IsOffer() == true)->PID<%d><%d> Administrator::Instance().ProxyInstance()\n", getpid(), gettid());
                     void* realIF = nullptr;
 
                     ProxyStub::UnknownProxy* base = Administrator::Instance().ProxyInstance(baseChannel, implementation, false, info.InterfaceId(), realIF);
@@ -1214,9 +1240,9 @@ namespace RPC {
                     if (base != nullptr) {
                         Core::IUnknown* realIFbase = base->Parent();
                         ASSERT(realIFbase != nullptr);
-
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle()->PID<%d><%d> _parent.Offer(realIFbase, info.InterfaceId())\n", getpid(), gettid());
                         _parent.Offer(realIFbase, info.InterfaceId());
-
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle()->PID<%d><%d> base->Complete(response)\n", getpid(), gettid());
                         base->Complete(response);
                     }
 
@@ -1226,25 +1252,28 @@ namespace RPC {
                     ASSERT(implementation != 0);
 
                     void* realIF = nullptr;
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.IsRevoke() == true)->PID<%d><%d> Administrator::Instance().ProxyFind()\n", getpid(), gettid());
                     ProxyStub::UnknownProxy* base = Administrator::Instance().ProxyFind(baseChannel, implementation, info.InterfaceId(), realIF);
 
                     if (base != nullptr) {
                         Core::IUnknown* realIFbase = base->Parent();
                         ASSERT(realIFbase != nullptr);
-
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.IsRevoke() == true)->PID<%d><%d> calling bbase->AddRef()\n", getpid(), gettid());
                         base->AddRef();
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.IsRevoke() == true)->PID<%d><%d> calling _parent.Revoke()\n", getpid(), gettid());
                         _parent.Revoke(realIFbase, info.InterfaceId());
-
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.IsRevoke() == true)->PID<%d><%d> calling base->Complete(response)\n", getpid(), gettid());
                         base->Complete(response);
                     }
 
                 } else if (info.InterfaceId() != static_cast<uint32_t>(~0)) {
 
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.InterfaceId() != static_cast<uint32_t>(~0))->PID<%d><%d> calling _parent.Acquire()\n", getpid(), gettid());
                     // See if we have something we can return right away, if it has been requested..
                     result = _parent.Acquire(info.ClassName(), info.InterfaceId(), info.VersionId());
 
                     if (result != nullptr) {
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.InterfaceId() != static_cast<uint32_t>(~0))->PID<%d><%d> calling Administrator::Instance().RegisterInterface()\n", getpid(), gettid());
                         Administrator::Instance().RegisterInterface(baseChannel, result, info.InterfaceId());
                     }
                 }
@@ -1496,22 +1525,27 @@ POP_WARNING()
 
         inline void Register(RPC::IRemoteConnection::INotification* sink)
         {
+            printf("WPEFramework::RPC::Communicator::Register()->PID<%d><%d> calling _connectionMap.Register()\n", getpid(), gettid());
             _connectionMap.Register(sink);
         }
         inline void Unregister(const RPC::IRemoteConnection::INotification* sink)
         {
+            printf("WPEFramework::RPC::Communicator::Unregister()->PID<%d><%d> calling _connectionMap.Unregister()\n", getpid(), gettid());
             _connectionMap.Unregister(sink);
         }
         inline IRemoteConnection* Connection(const uint32_t id)
         {
+            printf("WPEFramework::RPC::Communicator::Connection()->PID<%d><%d> _connectionId<%d> calling _connectionMap.Connection()\n", getpid(), gettid(), id);
             return (_connectionMap.Connection(id));
         }
         inline void* Create(uint32_t& pid, const Object& instance, const Config& config, const uint32_t waitTime)
         {
+            printf("WPEFramework::RPC::Communicator::Create()->PID<%d><%d> calling _connectionMap.Create()\n", getpid(), gettid());
             return (_connectionMap.Create(pid, instance, config, waitTime));
         }
         void Destroy()
         {
+            printf("WPEFramework::RPC::Communicator::Destroy()->PID<%d><%d>calling _connectionMap.Destroy()\n");
             _connectionMap.Destroy();
         }
         void Destroy(const uint32_t id);
@@ -1520,7 +1554,7 @@ POP_WARNING()
         void Closed(const Core::ProxyType<Core::IPCChannel>& channel)
         {
             Administrator::Proxies deadProxies;
-
+            printf("WPEFramework::RPC::Communicator::Closed()->PID<%d><%d> calling RPC::Administrator::Instance().DeleteChannel()\n", getpid(), gettid());
             RPC::Administrator::Instance().DeleteChannel(channel, deadProxies);
                 
             std::vector<ProxyStub::UnknownProxy*>::const_iterator loop(deadProxies.begin());
@@ -1581,6 +1615,7 @@ POP_WARNING()
                 const uint32_t interfaceId(message->Parameters().InterfaceId());
                 const uint32_t versionId(message->Parameters().VersionId());
 
+                printf("CommunicatorClient::AnnounceHandler::Procedure()->PID<%d> className<%s>interfaceId<%d> calling _parent.Acquire() get implementation\n", Core::ProcessInfo().Id(), className.c_str(), interfaceId);
                 Core::instance_id implementation = instance_cast<void*>(_parent.Acquire(className, interfaceId, versionId));
                 message->Response().Implementation(implementation);
 
@@ -1617,7 +1652,7 @@ POP_WARNING()
         inline INTERFACE* Open(const string& className, const uint32_t version = static_cast<uint32_t>(~0), const uint32_t waitTime = CommunicationTimeOut)
         {
             INTERFACE* result = nullptr;
-
+            printf(" WPEFramework::RPC::CommunicatorClient::Open()->PID<%d><%d> INTERFACE<%s> INTERFACE::ID<%d> className<%s>\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(INTERFACE).name()).Text()).c_str(), INTERFACE::ID, className.c_str());
             if (Open(waitTime, className, INTERFACE::ID, version) == Core::ERROR_NONE) {
                 // Oke we could open the channel, lets get the interface
                 result = WaitForCompletion<INTERFACE>(waitTime);
@@ -1633,11 +1668,12 @@ POP_WARNING()
         INTERFACE* Acquire(const uint32_t waitTime, const string& className, const uint32_t versionId)
         {
             INTERFACE* result(nullptr);
-
+            printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> className<%s>\n", getpid(), gettid(), className.c_str());
             if (BaseClass::IsOpen() == true) {
 
                 _announceMessage.Parameters().Set(Core::ProcessInfo().Id(), className, INTERFACE::ID, versionId);
 
+                printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> className<%s> calling BaseClass::Invoke()\n", getpid(), gettid(), className.c_str());
                 // Lock event until Dispatch() sets it.
                 if (BaseClass::Invoke(Core::ProxyType<RPC::AnnounceMessage>(_announceMessage), waitTime) == Core::ERROR_NONE) {
 
@@ -1645,12 +1681,12 @@ POP_WARNING()
                     ASSERT(_announceMessage.Parameters().Implementation() == 0);
 
                     Core::instance_id implementation(_announceMessage.Response().Implementation());
-
+                    printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> className<%s> cimplementation<%lld>\n", getpid(), gettid(), className.c_str(), implementation);
                     if (implementation) {
                         Core::ProxyType<Core::IPCChannel> baseChannel(*this);
 
                         ASSERT(baseChannel.IsValid() == true);
-
+                        printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> className<%s> calling Administrator::Instance().ProxyInstance() \n", getpid(), gettid(), className.c_str());
                         Administrator::Instance().ProxyInstance(baseChannel, implementation, true, result);
                     }
                 }
@@ -1662,7 +1698,7 @@ POP_WARNING()
         inline uint32_t Offer(INTERFACE* offer, const uint32_t version = static_cast<uint32_t>(~0), const uint32_t waitTime = CommunicationTimeOut)
         {
             uint32_t result(Core::ERROR_NONE);
-
+            printf(" WPEFramework::RPC::CommunicatorClient::Offer()->PID<%d><%d>\n", getpid(), gettid());
             if (BaseClass::IsOpen() == true) {
 
                 _announceMessage.Parameters().Set(Core::ProcessInfo().Id(), INTERFACE::ID, instance_cast<void*>(offer), Data::Init::OFFER);
@@ -1673,7 +1709,7 @@ POP_WARNING()
                 // Ensure the offer instance is known to security if it is used before the call with cached AddRef returns.
                 const RPC::InstanceRecord localInstances[] = { { RPC::instance_cast(offer), INTERFACE::ID }, { 0, 0 } };
                 baseChannel->CustomData(localInstances);
-
+                printf(" WPEFramework::RPC::CommunicatorClient::Offer()->PID<%d><%d> calling BaseClass::Invoke()\n", getpid(), gettid());
                 BaseClass::Invoke(Core::ProxyType<RPC::AnnounceMessage>(_announceMessage), waitTime);
 
                 // Lock event until Dispatch() sets it.
@@ -1701,7 +1737,7 @@ POP_WARNING()
         inline uint32_t Revoke(INTERFACE* offer, const uint32_t version = static_cast<uint32_t>(~0), const uint32_t waitTime = CommunicationTimeOut)
         {
             uint32_t result(Core::ERROR_NONE);
-
+            printf(" WPEFramework::RPC::CommunicatorClient::Revoke()->PID<%d><%d> INTERFACE<%s>INTERFACE::ID<%d>offer<%p> calling BaseClass::Invoke()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(INTERFACE).name()).Text()).c_str(), INTERFACE::ID, offer);
             if (BaseClass::IsOpen() == true) {
 
                 _announceMessage.Parameters().Set(Core::ProcessInfo().Id(), INTERFACE::ID, instance_cast<void*>(offer), Data::Init::REVOKE);
@@ -1743,11 +1779,15 @@ POP_WARNING()
         virtual void* Acquire(const string& className, const uint32_t interfaceId, const uint32_t versionId)
         {
             Core::Library emptyLibrary;
+
+            printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d>\n", getpid(), gettid());
+            printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d>  className.c_str<%s> interfaceId<%d>Core::ServiceAdministrator::Instance().Instantiate()\n", getpid(), gettid(),  className.c_str(), interfaceId);
             // Allright, respond with the interface.
             void* result = Core::ServiceAdministrator::Instance().Instantiate(emptyLibrary, className.c_str(), versionId, interfaceId);
 
             if (result != nullptr) {
                 Core::ProxyType<Core::IPCChannel> baseChannel(*this);
+                printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> Administrator::Instance().RegisterInterface()\n", getpid(), gettid());
                 Administrator::Instance().RegisterInterface(baseChannel, result, interfaceId);
             }
 
@@ -1766,17 +1806,18 @@ POP_WARNING()
 
             ASSERT(_announceMessage.Parameters().InterfaceId() == INTERFACE::ID);
             ASSERT(_announceMessage.Parameters().Implementation() == 0);
-
+            printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> INTERFACE<%s>WaitForCompletion()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(INTERFACE).name()).Text()).c_str());
             // Lock event until Dispatch() sets it.
             if (_announceEvent.Lock(waitTime) == Core::ERROR_NONE) {
 
                 Core::instance_id implementation(_announceMessage.Response().Implementation());
+                printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> _announceMessage.Response().Implementation<0x%x>\n", getpid(), gettid(), implementation);
 
                 if (implementation) {
                     Core::ProxyType<Core::IPCChannel> baseChannel(*this);
 
                     ASSERT(baseChannel.IsValid() == true);
-
+                    printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> Administrator::Instance().ProxyInstance()\n", getpid(), gettid());
                     Administrator::Instance().ProxyInstance(baseChannel, implementation, true, result);
                 }
             }

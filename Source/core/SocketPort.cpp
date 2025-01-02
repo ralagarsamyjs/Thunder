@@ -211,7 +211,7 @@ namespace WPEFramework {
 
             // the control data is dumped here
             char cmbuf[256];
-
+            printf("WPEFramework::Core::ReceiveFrom()->PID<%d><%d>\n", getpid(), gettid());
             struct iovec msgbuf = {
                 .iov_base = buffer,
                 .iov_len = static_cast<size_t>(bufferSize),
@@ -227,7 +227,7 @@ namespace WPEFramework {
                 .msg_controllen = sizeof(cmbuf),
                 .msg_flags = 0
             };
-
+            printf("WPEFramework::Core::ReceiveFrom()->PID<%d><%d> calling recvmsg()\n", getpid(), gettid());
             result = recvmsg(handle, &mh, 0);
             if ((static_cast<signed int>(result) != SOCKET_ERROR) && ((mh.msg_flags & MSG_CTRUNC) == 0)) {
                 for ( // iterate through the control headers
@@ -266,6 +266,7 @@ namespace WPEFramework {
         inline void DestroySocket(SOCKET& socket)
         {
 #ifdef __LINUX__
+            printf("WPEFramework::Core::DestroySocket()->PID<%d><%d>socket<%d> calling ::close(socket)\n", getpid(), gettid(), socket);
             ::close(socket);
 #endif
 
@@ -347,6 +348,9 @@ namespace WPEFramework {
             , m_SystemdSocket(false)
         {
             TRACE_L5("Constructor SocketPort (NodeId&) <%p>", (this));
+            printf("WPEFramework::Core::SocketPort::SocketPort()->PID<%d><%d> m_LocalNode.HostName<%s>m_LocalNode.HostAddress<%s>m_LocalNode.PortNumber<%d>\n", getpid(), gettid(), m_LocalNode.HostName().c_str(), m_LocalNode.HostAddress().c_str(), m_LocalNode.PortNumber());
+            printf("WPEFramework::Core::SocketPort::SocketPort()->PID<%d><%d> m_RemoteNode.HostName<%s>m_RemoteNode.HostAddress<%s>m_RemoteNode.PortNumber<%d>\n", getpid(), gettid(), m_RemoteNode.HostName().c_str(), m_RemoteNode.HostAddress().c_str(), m_RemoteNode.PortNumber());
+
         }
 
         SocketPort::SocketPort(
@@ -395,7 +399,8 @@ namespace WPEFramework {
             }
             else {
                 m_LocalNode = localAddress;
-
+                printf("WPEFramework::Core::SocketPort::SocketPort()->PID<%d><%d> m_LocalNode.HostName<%s>m_LocalNode.HostAddress<%s>m_LocalNode.PortNumber<%d>\n", getpid(), gettid(), m_LocalNode.HostName().c_str(), m_LocalNode.HostAddress().c_str(), m_LocalNode.PortNumber());
+                printf("WPEFramework::Core::SocketPort::SocketPort()->PID<%d><%d> m_RemoteNode.HostName<%s>m_RemoteNode.HostAddress<%s>m_RemoteNode.PortNumber<%d>\n", getpid(), gettid(), m_RemoteNode.HostName().c_str(), m_RemoteNode.HostAddress().c_str(), m_RemoteNode.PortNumber());
                 BufferAlignment(m_Socket);
 
                 m_State.store(SocketPort::LINK | SocketPort::OPEN | SocketPort::READ, Core::memory_order::memory_order_relaxed);
@@ -407,7 +412,7 @@ namespace WPEFramework {
         SocketPort::~SocketPort()
         {
             TRACE_L5("Destructor SocketPort <%p>", (this));
-
+            printf("WPEFramework::Core::SocketPort::~SocketPort()->PID<%d><%d>m_Socket<%d> calling DestroySocket \n", getpid(), gettid(), m_Socket);
             // Make sure the socket is closed before you destruct. Otherwise
             // the virtuals might be called, which are destructed at this point !!!!
             ASSERT((m_Socket == INVALID_SOCKET) || (IsClosed()));
@@ -426,7 +431,7 @@ namespace WPEFramework {
         uint32_t SocketPort::TTL() const
         {
             uint32_t value;
-
+            printf("WPEFramework::Core::SocketPort::TTL()->PID<%d><%d>calling getsockopt \n", getpid(), gettid());
 #ifdef __WINDOWS__
             int size = sizeof(value);
             if (getsockopt(m_Socket, IPPROTO_IP, IP_TTL, reinterpret_cast<char*>(&value), &size) != 0)
@@ -444,6 +449,7 @@ namespace WPEFramework {
         {
             uint32_t result = Core::ERROR_NONE;
             uint32_t value = ttl;
+            printf("WPEFramework::Core::SocketPort::TTL(const uint8_t ttl)->PID<%d><%d>calling setsockopt \n", getpid(), gettid());
 #ifdef __WINDOWS__
             if (setsockopt(m_Socket, IPPROTO_IP, IP_TTL, reinterpret_cast<char*>(&value), sizeof(value)) != 0)
 #else
@@ -479,7 +485,7 @@ namespace WPEFramework {
             m_ReadBytes = 0;
             m_SendBytes = 0;
             m_SendOffset = 0;
-
+            printf("WPEFramework::Core::SocketPort::Open()->PID<%d><%d>waitTime<%d> \n", getpid(), gettid(), waitTime);
             if ((m_State.load(Core::memory_order::memory_order_relaxed) & (SocketPort::LINK | SocketPort::OPEN | SocketPort::MONITOR)) == (SocketPort::LINK | SocketPort::OPEN)) {
                 // Open up an accepted socket, but not yet added to the monitor.
                 m_State.fetch_or(SocketPort::UPDATE, Core::memory_order::memory_order_relaxed);
@@ -495,7 +501,7 @@ namespace WPEFramework {
                 }
 
                 ASSERT(((m_SocketType != LISTEN) || (m_LocalNode.IsValid() == true)) && ((m_SocketType != STREAM) || (m_RemoteNode.Type() == m_LocalNode.Type())));
-
+                printf("WPEFramework::Core::SocketPort::Open()->PID<%d><%d> calling ConstructSocket() \n", getpid(), gettid());
                 m_Socket = ConstructSocket(m_LocalNode, specificInterface);
 
                 if ((m_Socket != INVALID_SOCKET) && (Initialize() == Core::ERROR_NONE)) {
@@ -552,11 +558,12 @@ namespace WPEFramework {
             }
 
             if ((nStatus == Core::ERROR_NONE) || (nStatus == Core::ERROR_INPROGRESS)) {
-
+                printf("WPEFramework::Core::SocketPort::Open()->PID<%d><%d> calling ResourceMonitor::Instance().Register() \n", getpid(), gettid());
                 ResourceMonitor::Instance().Register(*this);
 
                 if (nStatus == Core::ERROR_INPROGRESS) {
                     if (waitTime > 0) {
+                        printf("WPEFramework::Core::SocketPort::Open()->PID<%d><%d> calling WaitForOpen() \n", getpid(), gettid());
                         // We are good to go, we just have to wait till we are connected..
                         nStatus = WaitForOpen(waitTime);
                     }
@@ -567,6 +574,7 @@ namespace WPEFramework {
 
             }
             else {
+                printf("WPEFramework::Core::SocketPort::Open()->PID<%d><%d> calling DestroySocket() \n", getpid(), gettid());
                 DestroySocket(m_Socket);
             }
 
@@ -577,12 +585,13 @@ namespace WPEFramework {
         {
             // Make sure the state does not change in the mean time.
             m_syncAdmin.Lock();
-
+            printf("WPEFramework::Core::SocketPort::Close()->PID<%d><%d>waitTime<%d> calling IsClosed() \n", getpid(), gettid(), waitTime);
             bool closed = IsClosed();
 
             if (m_Socket != INVALID_SOCKET) {
 
                 m_syncAdmin.Unlock();
+                printf("WPEFramework::Core::SocketPort::Close()->PID<%d><%d> calling WaitForWriteComplete() \n", getpid(), gettid());
                 WaitForWriteComplete(waitTime);
                 m_syncAdmin.Lock();
 
@@ -603,26 +612,28 @@ namespace WPEFramework {
 #ifdef __WINDOWS__
                         shutdown(m_Socket, SD_BOTH);
 #else
+                        printf("WPEFramework::Core::SocketPort::Close()->PID<%d><%d> calling shutdown() \n", getpid(), gettid());
                         shutdown(m_Socket, SHUT_RDWR);
 #endif
                     }
-
+                    printf("WPEFramework::Core::SocketPort::Close()->PID<%d><%d> calling ResourceMonitor::Instance().Break() \n", getpid(), gettid());
                     ResourceMonitor::Instance().Break();
                 } else {
                     TRACE_L3("Socket is already closed or being closed");
                 }
 
                 if (waitTime > 0) {
+                    printf("WPEFramework::Core::SocketPort::Close()->PID<%d><%d> calling WaitForClosure() \n", getpid(), gettid());
                     closed = (WaitForClosure(waitTime) == Core::ERROR_NONE);
 
                     if (closed == false) {
                         // Make this a forced close !!!
                         m_State |= EXCEPTION;
-
+                        printf("WPEFramework::Core::SocketPort::Close(m_State |= EXCEPTION)->PID<%d><%d> calling ResourceMonitor::Instance().Break() \n", getpid(), gettid());
                         // We probably did not get a response from the otherside on the close
                         // sloppy but let's forcefully close it
                         ResourceMonitor::Instance().Break();
-
+                        printf("WPEFramework::Core::SocketPort::Close()->PID<%d><%d> calling WaitForClosure() \n", getpid(), gettid());
                         closed = (WaitForClosure(Core::infinite) == Core::ERROR_NONE);
 
                         ASSERT(closed == true);
@@ -641,9 +652,11 @@ namespace WPEFramework {
         {
             m_syncAdmin.Lock();
 
+            printf("WPEFramework::Core::SocketPort::Trigger()->PID<%d><%d> checking (SocketPort::SHUTDOWN | SocketPort::OPEN | SocketPort::EXCEPTION) \n", getpid(), gettid());
             if ((m_State & (SocketPort::SHUTDOWN | SocketPort::OPEN | SocketPort::EXCEPTION)) == SocketPort::OPEN) {
 
                 m_State |= SocketPort::WRITESLOT;
+                printf("WPEFramework::Core::SocketPort::Trigger(m_State |= SocketPort::WRITESLOT)->PID<%d><%d> calling  ResourceMonitor::Instance().Break()\n", getpid(), gettid());
                 ResourceMonitor::Instance().Break();
             }
             m_syncAdmin.Unlock();
@@ -725,8 +738,10 @@ namespace WPEFramework {
 
             SOCKET l_Result = INVALID_SOCKET;
 
+            printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d>\n", getpid(), gettid());
 #ifndef __WINDOWS__
             int foundUnixSocketFd = -1;
+            printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d> Check if domain path already exists\n", getpid(), gettid());
             // Check if domain path already exists, if so remove.
             if ((localNode.Type() == NodeId::TYPE_DOMAIN) && (m_SocketType == SocketPort::LISTEN)) {
                 if (access(localNode.HostName().c_str(), R_OK | W_OK) != -1) {
@@ -763,7 +778,7 @@ namespace WPEFramework {
                 return l_Result;
             }
 #endif
-
+            printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d> creating socket SOCKET \n", getpid(), gettid());
             if ((l_Result = ::socket(localNode.Type(), SocketMode() | SOCK_CLOEXEC, localNode.Extension())) == INVALID_SOCKET) {
                 TRACE_L1("Error on creating socket SOCKET. Error %d: %s", __ERRORRESULT__, strerror(__ERRORRESULT__));
             }
@@ -804,7 +819,7 @@ namespace WPEFramework {
                 }
             }
 #endif
-
+            printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d> See if we need to bind to a specific interface \n", getpid(), gettid());
 #ifndef __WINDOWS__
             // See if we need to bind to a specific interface.
             if ((l_Result != INVALID_SOCKET) && (specificInterface.empty() == false)) {
@@ -837,7 +852,7 @@ namespace WPEFramework {
                         }
                     }
                 }
-
+            printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d> calling ::bind()\n", getpid(), gettid());
             if (l_Result != INVALID_SOCKET) {
                 // Do we need to find something to bind to or is it pre-destined
                 // Bind is called in the following situations:
@@ -852,7 +867,9 @@ namespace WPEFramework {
 #ifndef __WINDOWS__
                         if (localNode.Type() == NodeId::TYPE_DOMAIN) {
                             if (AccessControl::Apply(localNode) == Core::ERROR_NONE) {
+                                printf("WPEFramework::Core::SocketPort::ConstructSocket((SocketMode() != SOCK_STREAM))->PID<%d><%d> calling ::BufferAlignment()\n", getpid(), gettid());
                                 BufferAlignment(l_Result);
+                                printf("WPEFramework::Core::SocketPort::ConstructSocket((SocketMode() != SOCK_STREAM))->PID<%d><%d> Return valid unix socket for %s fd=%d\n", getpid(), gettid(), localNode.HostName().c_str(), l_Result);
                                 return (l_Result);
                             }
                             else {
@@ -862,7 +879,9 @@ namespace WPEFramework {
                         else
 #endif
                         {
+                            printf("WPEFramework::Core::SocketPort::ConstructSocket((SocketMode() != SOCK_STREAM))->PID<%d><%d> calling ::BufferAlignment()\n", getpid(), gettid());
                             BufferAlignment(l_Result);
+                            printf("WPEFramework::Core::SocketPort::ConstructSocket((SocketMode() != SOCK_STREAM))->PID<%d><%d> Return valid unix socket for %s fd=%d\n", getpid(), gettid(), localNode.HostName().c_str(), l_Result);
                             return (l_Result);
                         }
                     }
@@ -872,14 +891,15 @@ namespace WPEFramework {
                     }
                 }
                 else {
+                    printf("WPEFramework::Core::SocketPort::ConstructSocket(SOCK_STREAM)->PID<%d><%d> calling ::BufferAlignment()\n", getpid(), gettid());
                     BufferAlignment(l_Result);
-
+                    printf("WPEFramework::Core::SocketPort::ConstructSocket(SOCK_STREAM))->PID<%d><%d> Return valid unix socket for %s fd=%d\n", getpid(), gettid(), localNode.HostName().c_str(), l_Result);
                     return (l_Result);
                 }
-
+                printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d> calling DestroySocket() \n", getpid(), gettid());
                 DestroySocket(l_Result);
             }
-
+            printf("WPEFramework::Core::SocketPort::ConstructSocket()->PID<%d><%d> return  INVALID_SOCKET \n", getpid(), gettid());
             return (INVALID_SOCKET);
         }
 
@@ -887,7 +907,7 @@ namespace WPEFramework {
         {
             // Make sure the state does not change in the mean time.
             m_syncAdmin.Lock();
-
+            printf("WPEFramework::Core::SocketPort::WaitForOpen()->PID<%d><%d>\n", getpid(), gettid());
             uint32_t waiting = (time == Core::infinite ? Core::infinite : time); // Expect time in MS.
 
             // Right, a wait till connection is closed is requested..
@@ -898,7 +918,7 @@ namespace WPEFramework {
                 uint32_t sleepSlot = (waiting > SLEEPSLOT_POLLING_TIME ? SLEEPSLOT_POLLING_TIME : waiting);
 
                 m_syncAdmin.Unlock();
-
+                printf("WPEFramework::Core::SocketPort::WaitForOpen()->PID<%d><%d> SleepMs(sleepSlot<%d>)\n", getpid(), gettid(), sleepSlot);
                 // Right, lets sleep in slices of 100 ms
                 SleepMs(sleepSlot);
 
@@ -917,12 +937,13 @@ namespace WPEFramework {
         uint32_t SocketPort::WaitForWriteComplete(const uint32_t time) const
         {
             uint32_t waiting = (time == Core::infinite ? Core::infinite : time); // Expect time in MS.
-
+            printf("WPEFramework::Core::SocketPort::WaitForWriteComplete()->PID<%d><%d>\n", getpid(), gettid());
             uint16_t state = 0;
             // Right, a wait till connection is closed is requested..
             while ((waiting > 0) && (IsOpen() == true)) {
                 m_syncAdmin.Lock();
                 state = m_State & SocketPort::WRITESLOT; //Read the state and check write slot is cleared
+                printf("WPEFramework::Core::SocketPort::WaitForWriteComplete()->PID<%d><%d>state<%d>\n", getpid(), gettid(), state);
                 m_syncAdmin.Unlock();
                 if (state == 0) {
                     break;
@@ -931,7 +952,7 @@ namespace WPEFramework {
                 ASSERT(Core::Thread::ThreadId() != ResourceMonitor::Instance().Id());
 
                 uint32_t sleepSlot = (waiting > SLEEPSLOT_POLLING_TIME ? SLEEPSLOT_POLLING_TIME : waiting);
-
+                printf("WPEFramework::Core::SocketPort::WaitForWriteComplete()->PID<%d><%d>calling SleepMs(sleepSlot<%d>)\n", getpid(), gettid(), sleepSlot);
                 // Right, lets sleep in slices of 100 ms
                 SleepMs(sleepSlot);
 
@@ -952,7 +973,7 @@ namespace WPEFramework {
 #else
             uint32_t waiting = (time == Core::infinite ? 20000 : time);
 #endif
-
+            printf("WPEFramework::Core::SocketPort::WaitForClosure()->PID<%d><%d>\n", getpid(), gettid());    
             // Right, a wait till connection is closed is requested..
             while ((waiting > 0) && (IsClosed() == false)) {
                 // Make sure we aren't in the monitor thread waiting for close completion.
@@ -961,7 +982,7 @@ namespace WPEFramework {
                 uint32_t sleepSlot = (waiting > SLEEPSLOT_POLLING_TIME ? SLEEPSLOT_POLLING_TIME : waiting);
 
                 m_syncAdmin.Unlock();
-
+                printf("WPEFramework::Core::SocketPort::WaitForClosure()->PID<%d><%d>calling SleepMs(sleepSlot<%d>)\n", getpid(), gettid(), sleepSlot);    
                 // Right, lets sleep in slices of <= SLEEPSLOT_POLLING_TIME ms
                 SleepMs(sleepSlot);
 
@@ -976,13 +997,14 @@ namespace WPEFramework {
                 waiting -= sleepSlot;
 #endif
             }
+            printf("WPEFramework::Core::SocketPort::WaitForClosure()->PID<%d><%d>IsClosed<%d> \n", getpid(), gettid(), (IsClosed() ? Core::ERROR_NONE : Core::ERROR_TIMEDOUT));
             return (IsClosed() ? Core::ERROR_NONE : Core::ERROR_TIMEDOUT);
         }
 
         uint16_t SocketPort::Events()
         {
             uint16_t result = 0;
-
+            printf("WPEFramework::Core::SocketPort::Events()->PID<%d><%d>\n", getpid(), gettid());
             if (HasError() == true) {
                 // Socket is in exceptional state, hold off reads and writes, allow only HUP events.
                 // While HUP has meaning only for connection-oriented sockets, having it non-zero
@@ -992,6 +1014,7 @@ namespace WPEFramework {
 #else
                 result = (POLLHUP | POLLRDHUP);
 #endif
+                printf("WPEFramework::Core::SocketPort::Events()->PID<%d><%d> result = POLLHUP\n", getpid(), gettid());
             }
             else if (m_State != 0) {
 #ifdef __WINDOWS__
@@ -999,12 +1022,13 @@ namespace WPEFramework {
 #else
                 result = POLLIN;
 #endif
-
+                printf("WPEFramework::Core::SocketPort::Events()->PID<%d><%d> result = POLLIN\n", getpid(), gettid());
                 // It is the first time we are going to pick this one up..
                 if ((m_State & SocketPort::MONITOR) == 0) {
                     m_State |= SocketPort::MONITOR;
 
                     if ((m_State & (SocketPort::OPEN | SocketPort::ACCEPT)) == SocketPort::OPEN) {
+                        printf("WPEFramework::Core::SocketPort::Events(m_State & (SocketPort::OPEN | SocketPort::ACCEPT)->PID<%d><%d> calling Opened()\n", getpid(), gettid());
                         Opened();
                     }
                 }
@@ -1019,11 +1043,13 @@ namespace WPEFramework {
 
                 if ((IsForcedClosing() == true) && (Closed() == true)) {
                     result = 0;
+                    printf("WPEFramework::Core::SocketPort::Events(IsForcedClosing() == true) && (Closed() == true))->PID<%d><%d> ~SocketPort::MONITOR\n", getpid(), gettid());
                     m_State &= ~SocketPort::MONITOR;
                 }
                 else {
 
                     if ((IsOpen()) && ((m_State & SocketPort::WRITESLOT) != 0)) {
+                        printf("WPEFramework::Core::SocketPort::Events((IsOpen()) && ((m_State & SocketPort::WRITESLOT))->PID<%d><%d> calling Write()\n", getpid(), gettid());
                         Write();
                     }
 #ifdef __LINUX__
@@ -1031,14 +1057,15 @@ namespace WPEFramework {
 #endif
                 }
             }
-
+            printf("WPEFramework::Core::SocketPort::Events()->PID<%d><%d> return result<%d>\n", getpid(), gettid(), result);
             return (result);
         }
 
         void SocketPort::Handle(const uint16_t flagsSet)
         {
             bool breakIssued = ((m_State & SocketPort::WRITESLOT) != 0);
-
+            unsigned short print_m_State = m_State;
+            printf("WPEFramework::Core::SocketPort::Handle()->PID<%d><%d>flagsSet<%d>breakIssued<%d>print_m_State<0x%x>\n", getpid(), gettid(), flagsSet, breakIssued, print_m_State);
             if ((flagsSet != 0) || (breakIssued == true)) {
 
 #ifdef __WINDOWS__
@@ -1078,18 +1105,22 @@ namespace WPEFramework {
                 else if (IsListening()) {
                     if ((flagsSet & POLLIN) != 0) {
                         // This triggeres an Addition of clients
+                        printf("WPEFramework::Core::SocketPort::Handle(flagsSet & POLLIN)->PID<%d><%d> calling Accepted()\n", getpid(), gettid());
                         Accepted();
                     }
                 }
                 else if (IsOpen()) {
                     if (((flagsSet & POLLOUT) != 0) || (breakIssued == true)) {
+                        printf("WPEFramework::Core::SocketPort::Handle(flagsSet & POLLOUT)->PID<%d><%d> calling Write()\n", getpid(), gettid());
                         Write();
                     }
                     if ((flagsSet & POLLIN) != 0) {
+                        printf("WPEFramework::Core::SocketPort::Handle(flagsSet & POLLIN)->PID<%d><%d> calling Read()\n", getpid(), gettid());
                         Read();
                     }
                 }
                 else if ((IsConnecting() == true) && ((flagsSet & POLLOUT) != 0)) {
+                    printf("WPEFramework::Core::SocketPort::Handle(flagsSet & POLLOUT)->PID<%d><%d> calling Opened()\n", getpid(), gettid());
                     Opened();
                 }
 #endif
@@ -1097,10 +1128,12 @@ namespace WPEFramework {
         }
 
         /* virtual */ int32_t SocketPort::Read(uint8_t buffer[], const uint16_t length) const {
+            printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d> recv()\n", getpid(), gettid());
             return (::recv(m_Socket, reinterpret_cast<char*>(buffer), length, 0));
         }
 
         /* virtual */ int32_t SocketPort::Write(const uint8_t buffer[], const uint16_t length) {
+            printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d> send()\n", getpid(), gettid());
             return (::send(m_Socket, reinterpret_cast<const char*>(buffer), length, 0));
         }
 
@@ -1109,11 +1142,13 @@ namespace WPEFramework {
             bool dataLeftToSend = true;
 
             m_syncAdmin.Lock();
-
+            printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d>\n", getpid(), gettid());
             m_State &= (~(SocketPort::WRITE | SocketPort::WRITESLOT));
+            printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d> m_State &= (~(SocketPort::WRITE | SocketPort::WRITESLOT))\n", getpid(), gettid());
 
             while (((m_State & (SocketPort::WRITE | SocketPort::SHUTDOWN | SocketPort::OPEN | SocketPort::EXCEPTION)) == SocketPort::OPEN) && (dataLeftToSend == true)) {
                 if (m_SendOffset == m_SendBytes) {
+                    printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d>calling SendData()\n", getpid(), gettid());
                     m_SendBytes = SendData(m_SendBuffer, m_SendBufferSize);
                     m_SendOffset = 0;
                     dataLeftToSend = (m_SendOffset != m_SendBytes);
@@ -1128,7 +1163,7 @@ namespace WPEFramework {
                     // if the buffer free (SEND flag) is active, so the buffer should always fit.
                     if (((m_State & SocketPort::LINK) == 0) && (m_RemoteNode.IsValid() == true)) {
                         ASSERT(m_RemoteNode.IsValid() == true);
-
+                        printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d>calling sendto()\n", getpid(), gettid());
                         sendSize = ::sendto(m_Socket,
                             reinterpret_cast<const char*>(&(m_SendBuffer[m_SendOffset])),
                             m_SendBytes - m_SendOffset, 0,
@@ -1137,6 +1172,7 @@ namespace WPEFramework {
 
                     }
                     else {
+                        printf("WPEFramework::Core::SocketPort::Write()->PID<%d><%d>calling Write()\n", getpid(), gettid());
                         sendSize = Write(&(m_SendBuffer[m_SendOffset]), m_SendBytes - m_SendOffset);
                     }
 
@@ -1164,9 +1200,9 @@ namespace WPEFramework {
         void SocketPort::Read()
         {
             m_syncAdmin.Lock();
-
+            printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>\n", getpid(), gettid());
             m_State &= (~SocketPort::READ);
-
+            printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>m_State &= (~SocketPort::READ)\n", getpid(), gettid());    
             while ((m_State & (SocketPort::READ | SocketPort::EXCEPTION | SocketPort::OPEN)) == SocketPort::OPEN) {
                 uint32_t l_Size;
 
@@ -1178,7 +1214,7 @@ namespace WPEFramework {
                 if (((m_State & SocketPort::LINK) == 0) && (m_LocalNode.Type() != NodeId::TYPE_NETLINK)) {
                     NodeId::SocketInfo l_Remote;
                     socklen_t l_Address = sizeof(l_Remote);
-
+                    printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>ReceiveFrom())\n", getpid(), gettid());    
                     l_Size = ReceiveFrom(m_Socket,
                         reinterpret_cast<char*>(&m_ReceiveBuffer[m_ReadBytes]),
                         m_ReceiveBufferSize - m_ReadBytes, (struct sockaddr*)&l_Remote,
@@ -1187,34 +1223,41 @@ namespace WPEFramework {
                     m_ReceivedNode = l_Remote;
                 }
                 else {
+                    printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>Read())\n", getpid(), gettid());
                     l_Size = Read(&(m_ReceiveBuffer[m_ReadBytes]), m_ReceiveBufferSize - m_ReadBytes);
                 }
-
+                printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>l_Size<%d>)\n", getpid(), gettid(), l_Size);
                 if (l_Size == 0) {
                     if ((m_State & SocketPort::LINK) != 0) {
                         m_State = ((m_State & (~SocketPort::OPEN)) | SocketPort::EXCEPTION);
+                        printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d> ((m_State & (~SocketPort::OPEN)) | SocketPort::EXCEPTION)\n", getpid(), gettid());
                     }
                 }
                 else if (l_Size != static_cast<uint32_t>(SOCKET_ERROR)) {
                     m_ReadBytes += l_Size;
+                    printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d> m_ReadBytes<%d>\n", getpid(), gettid(), m_ReadBytes);
                 }
                 else {
                     uint32_t l_Result = __ERRORRESULT__;
 
                     if ((l_Result == __ERROR_WOULDBLOCK__) || (l_Result == __ERROR_AGAIN__) || (l_Result == __ERROR_INPROGRESS__) || (l_Result == 0)) {
                         m_State |= SocketPort::READ;
+                        printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d> |= SocketPort::READ\n", getpid(), gettid());
                     }
                     else if (l_Result == __ERROR_CONNRESET__) {
                         m_State = ((m_State & (~SocketPort::OPEN)) | SocketPort::EXCEPTION);
+                        printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d> |= ((m_State & (~SocketPort::OPEN)) | SocketPort::EXCEPTION)\n", getpid(), gettid());
                     }
                     else if (l_Result != 0) {
                         printf("Read exception %d: %s\n", l_Result, strerror(__ERRORRESULT__));
                         m_State |= SocketPort::EXCEPTION;
+                        printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>StateChange())\n", getpid(), gettid());
                         StateChange();
                     }
                 }
 
                 if (m_ReadBytes != 0) {
+                    printf("WPEFramework::Core::SocketPort::Read()->PID<%d><%d>ReceiveData())\n", getpid(), gettid());    
                     uint16_t handledBytes = ReceiveData(m_ReceiveBuffer, m_ReadBytes);
 
                     ASSERT(m_ReadBytes >= handledBytes);
@@ -1236,22 +1279,24 @@ namespace WPEFramework {
             bool result = true;
 
             ASSERT(m_Socket != INVALID_SOCKET);
-
+            printf("WPEFramework::Core::SocketPort::Closed()->PID<%d><%d>\n", getpid(), gettid());
             m_syncAdmin.Lock();
 
             // Turn them all off, except for the SHUTDOWN bit, to show whether this was
             // done on our request, or closed from the other side...
             m_State &= SHUTDOWN;
-
+            printf("WPEFramework::Core::SocketPort::Closed()->PID<%d><%d>m_State &= SHUTDOWN callling StateChange()\n", getpid(), gettid());
             StateChange();
 
             m_State &= (~SHUTDOWN);
-
+            printf("WPEFramework::Core::SocketPort::Closed()->PID<%d><%d>m_State &= (~SHUTDOWN)()\n", getpid(), gettid());
             if (m_State != 0) {
                 result = false;
             }
             else {
+                printf("WPEFramework::Core::SocketPort::Closed()->PID<%d><%d>calling DestroySocket(m_Socket)\n", getpid(), gettid());
                 DestroySocket(m_Socket);
+                printf("WPEFramework::Core::SocketPort::Closed()->PID<%d><%d>calling ResourceMonitor::Instance().Unregister(*this)\n", getpid(), gettid());
                 ResourceMonitor::Instance().Unregister(*this);
                 // Remove socket descriptor for UNIX domain datagram socket.
                 if ((m_LocalNode.Type() == NodeId::TYPE_DOMAIN) &&
@@ -1261,6 +1306,7 @@ namespace WPEFramework {
 #ifdef __WINDOWS__
                     _unlink(m_LocalNode.HostName().c_str());
 #else
+                    printf("WPEFramework::Core::SocketPort::Closed()->PID<%d><%d>calling unlink(m_LocalNode.HostName().c_str())\n", getpid(), gettid());
                     unlink(m_LocalNode.HostName().c_str());
 #endif
                 }
@@ -1275,6 +1321,7 @@ namespace WPEFramework {
         {
             m_syncAdmin.Lock();
             m_State = (m_State & (~SocketPort::WRITE)) | SocketPort::OPEN;
+            printf("WPEFramework::Core::SocketPort::Opened( m_State = (m_State & (~SocketPort::WRITE)) | SocketPort::OPEN)->PID<%d><%d> calling StateChange()\n", getpid(), gettid());
             StateChange();
             m_syncAdmin.Unlock();
         }
@@ -1282,6 +1329,7 @@ namespace WPEFramework {
         void SocketPort::Accepted()
         {
             m_syncAdmin.Lock();
+            printf("WPEFramework::Core::SocketPort::Accepted()->PID<%d><%d> calling StateChange()\n", getpid(), gettid());
             StateChange();
             m_syncAdmin.Unlock();
         }
@@ -1291,12 +1339,13 @@ namespace WPEFramework {
             NodeId::SocketInfo address;
             socklen_t size = sizeof(address);
             SOCKET result;
-
+            printf("WPEFramework::Core::SocketPort::Accept(NodeId& remoteId)->PID<%d><%d> calling accept4()\n", getpid(), gettid());
 #ifdef __WINDOWS__
             if ((result = ::accept(m_Socket, (struct sockaddr*)&address, &size)) != SOCKET_ERROR) {
 #else
             if ((result = ::accept4(m_Socket, (struct sockaddr*)&address, &size, SOCK_CLOEXEC)) != SOCKET_ERROR) {
 #endif
+                printf("WPEFramework::Core::SocketPort::Accept()->PID<%d><%d> calling BufferAlignment()\n", getpid(), gettid());
                 // Align the buffer to what is requested
                 BufferAlignment(result);
 
@@ -1320,8 +1369,9 @@ namespace WPEFramework {
         {
             NodeId newConnection;
             SOCKET result;
-
+            printf("WPEFramework::Core::SocketPort::Accept()->PID<%d><%d> calling Accept()\n", getpid(), gettid());
             if (((result = Accept(newConnection)) != INVALID_SOCKET) && (SetNonBlocking(result) == true)) {
+                printf("WPEFramework::Core::SocketPort::Accept()->PID<%d><%d> calling DestroySocket()\n", getpid(), gettid());
                 DestroySocket(m_Socket);
 
                 m_Socket = result;
@@ -1342,21 +1392,23 @@ namespace WPEFramework {
             ASSERT(m_SocketType == SocketPort::LISTEN);
             ASSERT(m_State == 0);
             ASSERT(m_Socket != INVALID_SOCKET);
-
+            printf("WPEFramework::Core::SocketPort::Listen()->PID<%d><%d> calling DestroySocket()\n", getpid(), gettid());
             // Current socket can be destroyed
             DestroySocket(m_Socket);
 
+            printf("WPEFramework::Core::SocketPort::Listen()->PID<%d><%d> calling ConstructSocket()\n", getpid(), gettid());
             m_Socket = ConstructSocket(m_LocalNode, emptyString);
 
             if (m_Socket != INVALID_SOCKET) {
                 NodeId remoteId;
-
+                printf("WPEFramework::Core::SocketPort::Listen()->PID<%d><%d> calling listen()\n", getpid(), gettid());
                 TRACE_L3("Socket %u constructed", static_cast<uint32_t>(m_Socket));
 
                 if (::listen(m_Socket, MAX_LISTEN_QUEUE) == SOCKET_ERROR) {
                     TRACE_L1("Error on port socket LISTEN. Error %d", __ERRORRESULT__);
                 }
                 else {
+                    printf("WPEFramework::Core::SocketPort::Listen()->PID<%d><%d> SocketPort::UPDATE | SocketPort::MONITOR | SocketPort::OPEN | SocketPort::ACCEPT \n", getpid(), gettid());
                     // Trigger state to Open
                     m_State = SocketPort::UPDATE | SocketPort::MONITOR | SocketPort::OPEN | SocketPort::ACCEPT;
                 }
@@ -1368,12 +1420,12 @@ namespace WPEFramework {
             const NodeId::SocketInfo& inputInfo = multicastAddress;
 
             ASSERT(inputInfo.IPV4Socket.sin_family == AF_INET);
-
+            printf("WPEFramework::Core::SocketPort::Join(const NodeId & multicastAddress)->PID<%d><%d>\n", getpid(), gettid());
             ip_mreq multicastRequest;
 
             multicastRequest.imr_interface = static_cast<const NodeId::SocketInfo&>(LocalNode()).IPV4Socket.sin_addr;
             multicastRequest.imr_multiaddr = inputInfo.IPV4Socket.sin_addr;
-
+            printf("WPEFramework::Core::SocketPort::Join()->PID<%d><%d> calling setsockopt()\n", getpid(), gettid());
             if (::setsockopt(m_Socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<const char*>(&multicastRequest), sizeof(multicastRequest)) == SOCKET_ERROR) {
                 TRACE_L1("Error could not join a multicast address. Error: %d.", __ERRORRESULT__);
                 return (false);
@@ -1393,6 +1445,7 @@ namespace WPEFramework {
             multicastRequest.imr_interface = static_cast<const NodeId::SocketInfo&>(LocalNode()).IPV4Socket.sin_addr;
             multicastRequest.imr_multiaddr = inputInfo.IPV4Socket.sin_addr;
 
+            printf("WPEFramework::Core::SocketPort::Leave()->PID<%d><%d> calling setsockopt()\n", getpid(), gettid());
             if (::setsockopt(m_Socket, IPPROTO_IP, IP_DROP_MEMBERSHIP, reinterpret_cast<const char*>(&multicastRequest), sizeof(multicastRequest)) == SOCKET_ERROR) {
                 TRACE_L1("Error could not join a multicast address. Error: %d.", __ERRORRESULT__);
                 return (false);
@@ -1406,7 +1459,7 @@ namespace WPEFramework {
             const NodeId::SocketInfo& inputInfo = multicastAddress;
 
             ASSERT(inputInfo.IPV4Socket.sin_family == AF_INET);
-
+            printf("WPEFramework::Core::SocketPort::Join(const NodeId & multicastAddress, const NodeId & source)->PID<%d><%d>\n", getpid(), gettid());
 #ifdef __WINDOWS__
             ip_mreq_source multicastRequest;
 #else
@@ -1422,7 +1475,7 @@ namespace WPEFramework {
 
             multicastRequest.imr_multiaddr = inputInfo.IPV4Socket.sin_addr;
             multicastRequest.imr_sourceaddr = static_cast<const NodeId::SocketInfo&>(source).IPV4Socket.sin_addr;
-
+            printf("WPEFramework::Core::SocketPort::Join(const NodeId & multicastAddress, const NodeId & source)->PID<%d><%d> calling setsockopt()\n", getpid(), gettid());
             if (::setsockopt(m_Socket, IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP, reinterpret_cast<const char*>(&multicastRequest), sizeof(multicastRequest)) == SOCKET_ERROR) {
                 TRACE_L1("Error could not join a multicast address. Error: %d.", __ERRORRESULT__);
                 return (false);
@@ -1452,7 +1505,7 @@ namespace WPEFramework {
 
             multicastRequest.imr_multiaddr = inputInfo.IPV4Socket.sin_addr;
             multicastRequest.imr_sourceaddr = static_cast<const NodeId::SocketInfo&>(source).IPV4Socket.sin_addr;
-
+            printf("WPEFramework::Core::SocketPort::Leave(const WPEFramework::Core::NodeId &multicastAddress, const WPEFramework::Core::NodeId &source)->PID<%d><%d> calling setsockopt()\n", getpid(), gettid());
             if (::setsockopt(m_Socket, IPPROTO_IP, IP_DROP_SOURCE_MEMBERSHIP, reinterpret_cast<const char*>(&multicastRequest), sizeof(multicastRequest)) == SOCKET_ERROR) {
                 TRACE_L1("Error could not join a multicast address. Error: %d.", __ERRORRESULT__);
                 return (false);

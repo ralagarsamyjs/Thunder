@@ -36,6 +36,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
         , _offset(0)
         , _sendQueue()
     {
+        printf("WPEFramework::PluginHost::Channel::Channel()->PID<%d><%d>sizeof channel<%d> initialise WPEFramework::Web::WebSocketLinkType<...>::WebSocketLinkType<...>() \n", getpid(), gettid(), sizeof(*this));
     }
 POP_WARNING()
 

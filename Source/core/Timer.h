@@ -145,6 +145,7 @@ namespace Core {
 
             uint32_t Worker() override
             {
+                printf("WPEFramework::Core::TimerType<CONTENT>::TimeWorker::Worker()->PID<%d><%d> calling return (m_Parent.Process())\n", getpid(), gettid());
                 return (m_Parent.Process());
             }
 
@@ -338,13 +339,14 @@ namespace Core {
         {
             uint32_t delayTime = Core::infinite;
             uint64_t now = Time::Now().Ticks();
-
+            printf("WPEFramework::Core::TimerType<CONTENT>::Process()->PID<%d><%d> calling _adminLock.Lock()\n", getpid(), gettid());
             _adminLock.Lock();
 
+            printf("WPEFramework::Core::TimerType<CONTENT>::Process()->PID<%d><%d> calling _timerThread.Block()\n", getpid(), gettid());
             // Move to a blocked delay state. We would like to have some delay afterwards..
             // Ranging from 0-Core::infinite
             _timerThread.Block();
-
+            printf("WPEFramework::Core::TimerType<CONTENT>::Process()->PID<%d><%d> checking _pendingQueue \n", getpid(), gettid());
             while ((_pendingQueue.empty() == false) && (_pendingQueue.front().ScheduleTime() <= now)) {
                 TimedInfo<CONTENT> info(std::move(_pendingQueue.front()));
                 _executing = &(info.Content());
@@ -389,7 +391,7 @@ namespace Core {
             }
 
             _adminLock.Unlock();
-
+            printf("WPEFramework::Core::TimerType<CONTENT>::Process()->PID<%d><%d>delayTime<%d> return (delayTime)\n", getpid(), gettid(), delayTime);
             return (delayTime);
         }
 
@@ -479,7 +481,7 @@ namespace Core {
             uint32_t nextDelay = Core::infinite;
 
             Thread::Lock();
-
+            printf("WPEFramework::Core::WatchDogType<HANDLER>::Worker()->PID<%d><%d> calling Block()\n", getpid(), gettid());
             Block();
 
             if (_delay == 0) {
@@ -490,7 +492,7 @@ namespace Core {
             }
 
             Thread::Unlock();
-
+            printf("WPEFramework::Core::WatchDogType<HANDLER>::Worker()->PID<%d><%d> return (nextDelay)\n", getpid(), gettid());
             return (nextDelay);
         }
 

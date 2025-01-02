@@ -213,27 +213,31 @@ namespace PluginHost {
         bool HasActivity() const
         {
             Lock();
-
+            printf("WPEFramework::PluginHost::Channel::HasActivity()->PID<%d><%d> calling BaseClass::HasActivity()\n", getpid(), gettid());    
             bool result(BaseClass::HasActivity());
 
             // Check if we had a forced activity, if so than the result = the result no second chance;
             if ((_state & PINGED) == PINGED) {
+                printf("WPEFramework::PluginHost::Channel::HasActivity((_state & PINGED) == PINGED)->PID<%d><%d> Let clear it\n", getpid(), gettid());
                 // Let clear it, if the activity succeeed, we are good to go, if not, too bad :-)
                 _state &= (~PINGED);
                 Unlock();
             } 
             else if ((result == true) || (IsWebSocket() == false)) {
+                printf("WPEFramework::PluginHost::Channel::HasActivity()->PID<%d><%d> result<%d> iswebsocket<%d> iswebserver<%d>\n", getpid(), gettid(),result, (IsWebSocket() == false), (IsWebServer() == false));
+                printf("WPEFramework::PluginHost::Channel::HasActivity((result == true) || (IsWebSocket() == false))->PID<%d><%d> do nothing\n", getpid(), gettid());
                 Unlock();
             } 
             else {
+                printf("WPEFramework::PluginHost::Channel::HasActivity()->PID<%d><%d> websiocket and had no activity, time to send a ping.\n", getpid(), gettid());
                 // We are a websiocket and had no activity, time to send a ping..
                 _state |= PINGED;
                 Unlock();
-
+                printf("WPEFramework::PluginHost::Channel::HasActivity()->PID<%d><%d> ->Ping()\n", getpid(), gettid());
                 const_cast<BaseClass*>(static_cast<const BaseClass*>(this))->Ping();
                 result = true;
             }
-
+            printf("WPEFramework::PluginHost::Channel::HasActivity()->PID<%d><%d> return result<%d>\n", getpid(), gettid(), result);
             return (result);
         }
         string Name() const
@@ -263,7 +267,7 @@ namespace PluginHost {
             if (IsOpen() == true) {
 
                 BaseClass::Lock();
-
+                printf("WPEFramework::PluginHost::Channel::Submit()->PID<%d><%d> sendQueue.emplace_back(text)\n", getpid(), gettid());
                 _sendQueue.emplace_back(text);
 
                 bool trigger = (_sendQueue.size() == 1);
@@ -271,6 +275,7 @@ namespace PluginHost {
                 BaseClass::Unlock();
 
                 if (trigger == true) {
+                    printf("WPEFramework::PluginHost::Channel::Submit()->PID<%d><%d> BaseClass::Trigger()\n", getpid(), gettid());
                     BaseClass::Trigger();
                 }
             }
@@ -280,7 +285,7 @@ namespace PluginHost {
             if (IsOpen() == true) {
 
                 BaseClass::Lock();
-
+                printf("WPEFramework::PluginHost::Channel::Submit()->PID<%d><%d> sendQueue.emplace_back(<Core::JSON::IElement>entry)\n", getpid(), gettid());
                 _sendQueue.emplace_back(entry);
 
                 bool trigger = (_sendQueue.size() == 1);
@@ -288,6 +293,7 @@ namespace PluginHost {
                 BaseClass::Unlock();
 
                 if (trigger == true) {
+                    printf("WPEFramework::PluginHost::Channel::Submit()->PID<%d><%d> BaseClass::Trigger()\n", getpid(), gettid());
                     BaseClass::Trigger();
                 }
             }

@@ -186,7 +186,7 @@ namespace Core {
 
             // Do not insert the same identifier twice !!!!
             ASSERT(index == _receptors.end());
-
+            printf("WPEFramework::Core::FactoryType<BASEOBJECT, IDENTIFIER>::CreateFactory(_receptors)->PID<%d><%d>ACTUALELEMENT<%s>label<%d> initialQueueSize<%d> IDENTIFIER<%s>\n", getpid(),gettid(), (Core::ClassNameOnly(typeid(ACTUALELEMENT).name()).Text()).c_str(), label, initialQueueSize, (Core::ClassNameOnly(typeid(IDENTIFIER).name()).Text()).c_str());
             _receptors.insert(std::pair<IDENTIFIER, IFactory*>(label, new InternalFactoryType<ACTUALELEMENT>(initialQueueSize)));
         }
         template <typename ACTUALELEMENT>
@@ -196,7 +196,7 @@ namespace Core {
 
             // Do not insert the same identifier twice !!!!
             ASSERT(index == _receptors.end());
-
+            printf("WPEFramework::Core::FactoryType<BASEOBJECT, IDENTIFIER>::CreateFactory(_receptors)->PID<%d><%d>ACTUALELEMENT<%s>identifier<%d> initialQueueSize<%d> IDENTIFIER<%s>\n", getpid(),gettid(), (Core::ClassNameOnly(typeid(ACTUALELEMENT).name()).Text()).c_str(), identifier, initialQueueSize, (Core::ClassNameOnly(typeid(IDENTIFIER).name()).Text()).c_str());
             _receptors.insert(std::pair<IDENTIFIER, IFactory*>(identifier, new InternalFactoryType<ACTUALELEMENT>(initialQueueSize)));
         }
 
@@ -214,7 +214,7 @@ namespace Core {
             if (index != _receptors.end()) {
                 result = index->second->GetElement();
             }
-
+            printf("WPEFramework::Core::FactoryType<BASEOBJECT, IDENTIFIER>::CreateFactory(_receptors)->PID<%d><%d>BASEOBJECT<%s>identifier<%d> IDENTIFIER<%s>\n", getpid(),gettid(), (Core::ClassNameOnly(typeid(BASEOBJECT).name()).Text()).c_str(), identifier, (Core::ClassNameOnly(typeid(IDENTIFIER).name()).Text()).c_str());
             return result;
         }
         inline Iterator Factories() const

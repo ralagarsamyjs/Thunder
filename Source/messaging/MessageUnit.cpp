@@ -143,7 +143,7 @@ namespace WPEFramework {
         uint32_t MessageUnit::Open(const string& pathName, const string& configuration, const bool background, const flush flushMode)
         {
             uint32_t result = Core::ERROR_OPENING_FAILED;
-
+            printf("WPEFramework::Messaging::MessageUnit::Open()->PID<%d><%d>pathName<%s>\n", getpid(), gettid(), pathName);
             string identifier = _T("md");
             _settings.Configure(pathName, identifier, configuration, background, flushMode);
 
@@ -191,7 +191,7 @@ namespace WPEFramework {
         uint32_t MessageUnit::Open(const uint32_t instanceId)
         {
             uint32_t result = Core::ERROR_OPENING_FAILED;
-
+            printf("WPEFramework::Messaging::MessageUnit::Open()->PID<%d><%d>\n", getpid(), gettid());
             ASSERT(_dispatcher == nullptr);
 
             if (instanceId != static_cast<uint32_t>(~0)) {
