@@ -294,7 +294,7 @@ namespace RPC {
                             _channelReferenceMap.erase(index);
                             TRACE_L3("Unregistered interface %p(%u).", source, interfaceId);
                             printf("WPEFramework::RPC::Administrator::UnregisterInterface()->PID<%d><%d> Unregistered interface %p(%u) \n", getpid(), gettid(), source, interfaceId);
-                        }
+                        }   
                     }
                 } else {
                     printf("====> Unregistering an interface [0x%x, %d] which has not been registered!!!\n", interfaceId, Core::ProcessInfo().Id());

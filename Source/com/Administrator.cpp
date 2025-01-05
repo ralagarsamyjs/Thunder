@@ -379,7 +379,7 @@ namespace RPC {
     void Administrator::DeleteChannel(const Core::ProxyType<Core::IPCChannel>& channel, Proxies& pendingProxies)
     {
         _adminLock.Lock();
-        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d>channel->LinkId<%d> \n", getpid(), gettid(), channel->LinkId());
+        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d>channel->LinkId<0x%x> \n", getpid(), gettid(), channel->LinkId());
         ReferenceMap::iterator remotes(_channelReferenceMap.find(channel->LinkId()));
 
         if (remotes != _channelReferenceMap.end()) {
@@ -423,7 +423,7 @@ namespace RPC {
         }
 
         _adminLock.Unlock();
-        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d>channel->LinkId<%d> return \n", getpid(), gettid(), channel->LinkId());
+        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d>channel->LinkId<0x%x> return \n", getpid(), gettid(), channel->LinkId());
     }
 
     /* static */ Administrator& Job::_administrator= Administrator::Instance();

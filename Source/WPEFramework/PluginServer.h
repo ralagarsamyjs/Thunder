@@ -3919,12 +3919,13 @@ POP_WARNING()
         public:
             inline uint32_t Id() const
             {
+                printf("WPEFramework::PluginHost::Server::Channel::Id()->PID<%d><%d>calling PluginHost::Channel::Id()\n", getpid(), gettid());
                 return (PluginHost::Channel::Id());
             }
             static void Initialize(const string& serverPrefix)
             {
                 WebRequestJob::Initialize();
-
+                printf("WPEFramework::PluginHost::Server::Channel::Initialize()->PID<%d><%d>\n", getpid(), gettid());
                 _missingCallsign->ErrorCode = Web::STATUS_BAD_REQUEST;
                 _missingCallsign->Message = _T("After the /") + serverPrefix + _T("/ URL a Callsign is expected.");
 
@@ -3937,7 +3938,7 @@ POP_WARNING()
             void Revoke(PluginHost::ISecurity* baseRights)
             {
                 PluginHost::Channel::Lock();
-
+                printf("WPEFramework::PluginHost::Server::Channel::Revoke(baseRights)->PID<%d><%d>\n", getpid(), gettid());
                 if (_security != baseRights) {
                     if (_security != nullptr) {
                         _security->Release();
@@ -3950,14 +3951,17 @@ POP_WARNING()
             }
             inline void Submit(const string& text)
             {
+                printf("WPEFramework::PluginHost::Server::Channel::Submit(text)->PID<%d><%d>\n", getpid(), gettid());
                 PluginHost::Channel::Submit(text);
             }
             inline void Submit(const Core::ProxyType<Web::Response>& entry)
             {
+                printf("WPEFramework::PluginHost::Server::Channel::Submit(const Core::ProxyType<Web::Response>& entry)->PID<%d><%d>\n", getpid(), gettid());
                 PluginHost::Channel::Submit(entry);
             }
             void Submit(const Core::ProxyType<Core::JSON::IElement>& entry) 
             {
+                printf("WPEFramework::PluginHost::Server::Channel::Submit()->PID<%d><%d>\n", getpid(), gettid());
                 if (State() == Channel::ChannelState::WEB) {
                     Core::ProxyType<Web::Response> response = IFactories::Instance().Response();
 
@@ -4202,7 +4206,7 @@ POP_WARNING()
             void Received(Core::ProxyType<Core::JSON::IElement>& element) override
             {
                 bool securityClearance = ((State() & Channel::JSONRPC) == 0);
-
+                printf("WPEFramework::PluginHost::Server::Channel::Received((Core::ProxyType<Core::JSON::IElement>& element)->PID<%d><%d>\n", getpid(), gettid());
                 ASSERT(_service.IsValid() == true);
 
                 TRACE(SocketFlow, (element));
@@ -4245,7 +4249,7 @@ POP_WARNING()
                 ASSERT(_service.IsValid() == true);
 
                 TRACE(TextFlow, (value));
-
+                printf("WPEFramework::PluginHost::Server::Channel::Received(value)->PID<%d><%d>\n", getpid(), gettid());
                 // Send the JSON object out to be handled.
                 // By definition, we can issue it on a rental thread..
                 Core::ProxyType<TextJob> job(_textJobs.Element());
@@ -4263,7 +4267,7 @@ POP_WARNING()
             uint16_t SendData(uint8_t* dataFrame, const uint16_t maxSendSize) override
             {
                 uint16_t result = 0;
-
+                printf("WPEFramework::PluginHost::Server::Channel::SendData()->PID<%d><%d>\n", getpid(), gettid());
                 if (State() == RAW) {
                     result = _service->Outbound(Id(), dataFrame, maxSendSize);
                 } else {
@@ -4275,7 +4279,7 @@ POP_WARNING()
             uint16_t ReceiveData(uint8_t* dataFrame, const uint16_t receivedSize) override
             {
                 uint16_t result = receivedSize;
-
+                printf("WPEFramework::PluginHost::Server::Channel::ReceiveData()->PID<%d><%d>\n", getpid(), gettid());
                 if (State() == RAW) {
                     result = _service->Inbound(Id(), dataFrame, receivedSize);
                 } else {
@@ -4289,7 +4293,7 @@ POP_WARNING()
             void StateChange()
             {
                 TRACE(Activity, (_T("State change on [%d] to [%s]"), Id(), (IsSuspended() ? _T("SUSPENDED") : (IsUpgrading() ? _T("UPGRADING") : (IsWebSocket() ? _T("WEBSOCKET") : _T("WEBSERVER"))))));
-
+                printf("WPEFramework::PluginHost::Server::Channel::StateChange()->PID<%d><%d>State change on [%d] to [%s]\n", getpid(), gettid(), Id(), (IsSuspended() ? _T("SUSPENDED") : (IsUpgrading() ? _T("UPGRADING") : (IsWebSocket() ? _T("WEBSOCKET") : _T("WEBSERVER")))));
                 // If we are closing (or closed) do the clean up
                 if (IsOpen() == false) {
                     if (_service.IsValid() == true) {
@@ -4351,6 +4355,7 @@ POP_WARNING()
         private:
             inline string SelectSupportedProtocol(const Web::ProtocolsArray& protocols)
             {
+                printf("WPEFramework::PluginHost::Server::Channel::SelectSupportedProtocol()->PID<%d><%d>\n", getpid(), gettid());
                 for (const auto& protocol : protocols) {
                     if (protocol == _T("notification")) {
                         State(TEXT, true);
@@ -4552,6 +4557,7 @@ POP_WARNING()
         }
         inline ChannelMap& Dispatcher()
         {
+            printf("WPEFramework::PluginHost::Server::Dispatcher()->PID<%d><%d>return _connections\n", getpid(), gettid());
             return (_connections);
         }
         inline void DumpMetadata() {
@@ -4584,6 +4590,7 @@ POP_WARNING()
         }
         inline ServiceMap& Services()
         {
+            printf("WPEFramework::PluginHost::Server::Services()->PID<%d><%d>return _services\n", getpid(), gettid());
             return (_services);
         }
         inline void Metadata(PluginHost::MetaData::Version& data)
@@ -4595,26 +4602,32 @@ POP_WARNING()
         }
         inline Server::WorkerPoolImplementation& WorkerPool()
         {
+            printf("WPEFramework::PluginHost::Server::WorkerPool()->PID<%d><%d>return _dispatcher\n", getpid(), gettid());
             return (_dispatcher);
         }
         inline void Submit(const Core::ProxyType<Core::IDispatch>& job)
         {
+            printf("WPEFramework::PluginHost::Server::Submit()->PID<%d><%d>calling _dispatcher.Submit(job))\n", getpid(), gettid());
             _dispatcher.Submit(job);
         }
         inline void Schedule(const uint64_t time, const Core::ProxyType<Core::IDispatch>& job)
         {
+            printf("WPEFramework::PluginHost::Server::Schedule()->PID<%d><%d>calling _dispatcher.Schedule(time, job)\n", getpid(), gettid());
             _dispatcher.Schedule(time, job);
         }
         inline void Revoke(const Core::ProxyType<Core::IDispatch> job)
         {
+            printf("WPEFramework::PluginHost::Server::Revoke()->PID<%d><%d>calling _dispatcher.Revoke(job)\n", getpid(), gettid());
             _dispatcher.Revoke(job);
         }
         inline PluginHost::Config& Configuration()
         {
+            printf("WPEFramework::PluginHost::Server::Configuration()->PID<%d><%d>return _config\n", getpid(), gettid());
             return (_config);
         }
         inline const PluginHost::Config& Configuration() const
         {
+            printf("WPEFramework::PluginHost::Server::Configuration()->PID<%d><%d>return _config\n", getpid(), gettid());
             return (_config);
         }
 
@@ -4624,30 +4637,34 @@ POP_WARNING()
         uint32_t Persist()
         {
             Override infoBlob(_config, _services, Configuration().PersistentPath() + PluginOverrideFile);
-
+            printf("WPEFramework::PluginHost::Server::Persist()->PID<%d><%d>return infoBlob.Save())\n", getpid(), gettid());
             return (infoBlob.Save());
         }
         uint32_t Load()
         {
             Override infoBlob(_config, _services, Configuration().PersistentPath() + PluginOverrideFile);
-
+            printf("WPEFramework::PluginHost::Server::Load()->PID<%d><%d> calling infoBlob.Load()\n", getpid(), gettid());
             return (infoBlob.Load());
         }
 
     private:
         Core::ProxyType<Service> Controller()
         {
+            printf("WPEFramework::PluginHost::Server::Controller()->PID<%d><%d> return _controller\n", getpid(), gettid());
             return (_controller);
         }
         ISecurity* Officer(const string& token)
         {
+            printf("WPEFramework::PluginHost::Server::Officer(token)->PID<%d><%d> return _services.Officer(token)\n", getpid(), gettid());
             return (_services.Officer(token));
         }
         ISecurity* Officer()
         {
+            printf("WPEFramework::PluginHost::Server::Officer()->PID<%d><%d> return _services.Officer()\n", getpid(), gettid());
             return (_config.Security());
         }
         void Closed(const uint32_t id) {
+            printf("WPEFramework::PluginHost::Server::Closed()->PID<%d><%d>calling _services.Closed(id<%d>)\n", getpid(), gettid(), id);
             _services.Closed(id);
         }
 

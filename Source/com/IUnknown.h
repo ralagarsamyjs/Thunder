@@ -354,10 +354,12 @@ namespace ProxyStub {
             printf("WPEFramework::ProxyStub::UnknownProxy::Complete()->PID<%d><%d>impl<0x%x>id<%d>\n", getpid(), gettid(), impl, id);
             if (_channel.IsValid() == true) {
                 if (how == RPC::Data::Output::mode::CACHED_ADDREF) {
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Complete(CACHED_ADDREF)->PID<%d><%d>Calling RPC::Administrator::Instance().AddRef()\n", getpid(), gettid());
                     // Just AddRef this implementation
                     RPC::Administrator::Instance().AddRef(_channel, reinterpret_cast<void*>(impl), id);
                 }
                 else if (how == RPC::Data::Output::mode::CACHED_RELEASE) {
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Complete(CACHED_RELEASE)->PID<%d><%d>Calling RPC::Administrator::Instance().Release()\n", getpid(), gettid());
                     // Just Release this implementation
                     RPC::Administrator::Instance().Release(_channel, reinterpret_cast<void*>(impl), id, 1);
                 }
