@@ -118,7 +118,7 @@ namespace RPC {
         bool removed = false;
 
         _adminLock.Lock();
-        printf("WPEFramework::RPC::Administrator::UnregisterProxy()->PID<%d><%d> ProxyInterfaceId<%d>\n", getpid(), gettid(),proxy.InterfaceId());
+        printf("WPEFramework::RPC::Administrator::UnregisterProxy()->PID<%d><%d> ProxyInterfaceId<%d>LinkId<%d>\n", getpid(), gettid(),proxy.InterfaceId(), proxy.LinkId());
         ChannelMap::iterator index(_channelProxyMap.find(proxy.LinkId()));
 
         printf("WPEFramework::RPC::Administrator::UnregisterProxy()->PID<%d><%d> checking the _channelProxyMap\n", getpid(), gettid());
@@ -379,7 +379,7 @@ namespace RPC {
     void Administrator::DeleteChannel(const Core::ProxyType<Core::IPCChannel>& channel, Proxies& pendingProxies)
     {
         _adminLock.Lock();
-        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d> \n", getpid(), gettid());
+        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d>channel->LinkId<%d> \n", getpid(), gettid(), channel->LinkId());
         ReferenceMap::iterator remotes(_channelReferenceMap.find(channel->LinkId()));
 
         if (remotes != _channelReferenceMap.end()) {
@@ -413,7 +413,7 @@ namespace RPC {
                 entry->Invalidate();
                 _danglingProxies.emplace_back(entry);
             }
-            printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d> calling _channelProxyMap.erase()\n", getpid(), gettid());
+            printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d> channel->LinkId<%d> calling _channelProxyMap.erase()\n", getpid(), gettid(), channel->LinkId());
             // holds, so it is safe to just move the vector from the map to
             // the pendingProxies. The receiver of pendingProxies has to take
             // care of releasing the last reference we, as administration layer
@@ -423,6 +423,7 @@ namespace RPC {
         }
 
         _adminLock.Unlock();
+        printf("WPEFramework::RPC::Administrator::DeleteChannel()->PID<%d><%d>channel->LinkId<%d> return \n", getpid(), gettid(), channel->LinkId());
     }
 
     /* static */ Administrator& Job::_administrator= Administrator::Instance();

@@ -199,7 +199,7 @@ namespace ProxyStub {
         uint32_t Release() const {
             uint32_t result = Core::ERROR_NONE;
 
-            printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d>_refCount<%d> +1\n", getpid(), gettid(), _refCount);
+            printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d>_refCount<%d> -1\n", getpid(), gettid(), _refCount);
             _adminLock.Lock();
             ASSERT(_refCount > 0);
             _refCount--;

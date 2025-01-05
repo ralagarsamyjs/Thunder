@@ -119,18 +119,21 @@ namespace Plugin {
             }
             void Activated(const string& callsign, PluginHost::IShell* plugin) override
             {
+                printf("WPEFramework::Plugin::Controller::Sink::Activated()->PID<%d><%d>callsign<%s> calling _parent.NotifyStateChange(ACTIVATED)\n", getpid(), gettid(), callsign.c_str());
                 _parent.NotifyStateChange(callsign, PluginHost::IShell::ACTIVATED, plugin->Reason());
-
+                printf("WPEFramework::Plugin::Controller::Sink::Activated()->PID<%d><%d>callsign<%s> calling _parent.StartupResume(callsign, plugin)\n", getpid(), gettid(), callsign.c_str());
                 // Make sure the resumes 
                 _parent.StartupResume(callsign, plugin);
 
             }
             void Deactivated(const string& callsign, PluginHost::IShell* plugin) override
             {
+                printf("WPEFramework::Plugin::Controller::Sink::Deactivated()->PID<%d><%d>callsign<%s> calling _parent.NotifyStateChange(DEACTIVATED)\n", getpid(), gettid(), callsign.c_str());
                 _parent.NotifyStateChange(callsign, PluginHost::IShell::DEACTIVATED, plugin->Reason());
             }
             void Unavailable(const string& callsign, PluginHost::IShell* plugin) override
             {
+                printf("WPEFramework::Plugin::Controller::Sink::Unavailable()->PID<%d><%d>callsign<%s> calling _parent.NotifyStateChange(UNAVAILABLE)\n", getpid(), gettid(), callsign.c_str());
                 _parent.NotifyStateChange(callsign, PluginHost::IShell::UNAVAILABLE, plugin->Reason());
             }
 

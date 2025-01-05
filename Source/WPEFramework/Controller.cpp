@@ -1187,14 +1187,15 @@ ASSERT(_service != nullptr);
         _adminLock.Lock();
 
         std::list<Exchange::Controller::ILifeTime::INotification*>::const_iterator index = _observers.begin();
-        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::NotifyStateChange()->PID<%d><%d>\n", getpid(), gettid());
+        printf("WPEFramework::Core::hresult WPEFramework::Plugin::Controller::NotifyStateChange()->PID<%d><%d>callsign<%s>\n", getpid(), gettid(), callsign.c_str());
         while(index != _observers.end()) {
+            printf("WPEFramework::Plugin::Controller::NotifyStateChange()->PID<%d><%d> calling (*index)->StateChange(callsign, state, reason)\n", getpid(), gettid());
             (*index)->StateChange(callsign, state, reason);
             index++;
         }
 
         _adminLock.Unlock();
-
+        printf("WPEFramework::Plugin::Controller::NotifyStateChange()->PID<%d><%d> calling Exchange::Controller::JLifeTime::Event::StateChange()\n", getpid(), gettid());
         // also notify the JSON RPC listeners (if any)
         Exchange::Controller::JLifeTime::Event::StateChange(*this, callsign, state, reason);
 

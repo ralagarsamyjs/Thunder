@@ -981,6 +981,7 @@ namespace PluginHost {
                     const Core::ProxyType<RPC::InvokeServer>& handler)
                     : RPC::Communicator(source, proxyStubPath, Core::ProxyType<Core::IIPCServer>(handler))
                     , _plugin(nullptr) {
+                        printf("WPEFramework::PluginHost::Server::Service::ExternalAccess()->PID<%d><%d> Constructor RPC::Communicator()\n", getpid(), gettid());
                 }
                 ~ExternalAccess() override = default;
 
@@ -2548,16 +2549,18 @@ namespace PluginHost {
                 }
                 void Register(RPC::IRemoteConnection::INotification* sink)
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Register(RPC::IRemoteConnection::INotification* sink)->PID<%d><%d> calling RPC::Communicator::Register(sink)\n", getpid(), gettid());    
                     RPC::Communicator::Register(sink);
                 }
                 void Unregister(const RPC::IRemoteConnection::INotification* sink)
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Unregister(RPC::IRemoteConnection::INotification* sink)->PID<%d><%d> calling RPC::Communicator::Unregister(sink)\n", getpid(), gettid());    
                     RPC::Communicator::Unregister(sink);
                 }
                 void Register(IShell::ICOMLink::INotification* sink)
                 {
                     ASSERT(sink != nullptr);
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Register(IShell::ICOMLink::INotification* sink)->PID<%d><%d>\n", getpid(), gettid());
                     if (sink != nullptr) {
 
                         _adminLock.Lock();
@@ -2577,7 +2580,7 @@ namespace PluginHost {
                 void Unregister(IShell::ICOMLink::INotification* sink)
                 {
                     ASSERT(sink != nullptr);
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Unregister(IShell::ICOMLink::INotification* sink)->PID<%d><%d>\n", getpid(), gettid());
                     if (sink != nullptr) {
 
                         _adminLock.Lock();
@@ -2619,28 +2622,32 @@ namespace PluginHost {
                 RPC::Communicator::RemoteConnection* CreateStarter(const RPC::Config& config, const RPC::Object& instance) override
                 {
                     RPC::Communicator::RemoteConnection* result = nullptr;
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::CreateStarter()->PID<%d><%d>\n", getpid(), gettid());
                     if (instance.Type() == RPC::Object::HostType::DISTRIBUTED) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::CreateStarter()->PID<%d><%d> Core::Service<RemoteHost>::Create<RPC::Communicator::RemoteConnection>(instance, config)\n", getpid(), gettid());
                         result = Core::Service<RemoteHost>::Create<RPC::Communicator::RemoteConnection>(instance, config);
                     } else {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::CreateStarter()->PID<%d><%d> RPC::Communicator::CreateStarter(config, instance)\n", getpid(), gettid());
                         result = RPC::Communicator::CreateStarter(config, instance);
                     }
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::CreateStarter()->PID<%d><%d> return\n", getpid(), gettid());    
                     return result;
                 }
 
                 void* Acquire(const string& className, const uint32_t interfaceId, const uint32_t version) override
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Acquire()->PID<%d><%d> _parent.Acquire()\n", getpid(), gettid());    
                     return (_parent.Acquire(interfaceId, className, version));
                 }
 
                 void Dangling(const Core::IUnknown* source, const uint32_t interfaceId) override
                 {
                     _adminLock.Lock();
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Dangling()->PID<%d><%d> _parent.Dangling()\n", getpid(), gettid());    
                     _parent.Dangling(source, interfaceId);
 
                     for (auto& observer : _requestObservers) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Dangling()->PID<%d><%d> observer->Dangling()\n", getpid(), gettid());    
                         observer->Dangling(source, interfaceId);
                     }
 
@@ -2655,14 +2662,16 @@ namespace PluginHost {
                         const PluginHost::IPlugin::INotification* notification = remote->QueryInterface<const PluginHost::IPlugin::INotification>();
 
                         ASSERT(notification != nullptr);
-
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Revoke()->PID<%d><%d> _parent.Unregister(notification)\n", getpid(), gettid());    
                         _parent.Unregister(notification);
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Revoke()->PID<%d><%d> notification->Release()\n", getpid(), gettid());    
                         notification->Release();
                     }
 
                     _adminLock.Lock();
 
                     for (auto& observer : _requestObservers) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Revoke()->PID<%d><%d> observer->Revoked(remote, interfaceId)\n", getpid(), gettid());    
                         observer->Revoked(remote, interfaceId);
                     }
 
@@ -2691,6 +2700,7 @@ namespace PluginHost {
                     , _comms(comms)
                     , _connector(connector)
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::RemoteInstantiation()->PID<%d><%d>\n", getpid(), gettid());
                 }
 
             public:
@@ -2701,11 +2711,13 @@ namespace PluginHost {
             public:
                 static IRemoteInstantiation* Create(ServiceMap& parent, const CommunicatorServer& comms, const string& connector)
                 {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::Create()->PID<%d><%d> calling new RemoteInstantiation()\n", getpid(), gettid());
                     return (new RemoteInstantiation(parent, comms, connector));
                 }
                 uint32_t AddRef() const override
                 {
                     Core::InterlockedIncrement(_refCount);
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::AddRef()->PID<%d><%d> _refCount<%d>\n", getpid(), gettid(),_refCount);
                     return (Core::ERROR_NONE);
                 }
                 uint32_t Release() const override
@@ -2713,17 +2725,18 @@ namespace PluginHost {
                     _parent._adminLock.Lock();
 
                     if (Core::InterlockedDecrement(_refCount) == 0) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::AddRef()->PID<%d><%d> _parent.Remove(_connector)\n", getpid(), gettid());
                         _parent.Remove(_connector);
 
                         _parent._adminLock.Unlock();
-
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::AddRef()->PID<%d><%d> delete this\n", getpid(), gettid());
                         delete this;
 
                         return (Core::ERROR_DESTRUCTION_SUCCEEDED);
                     } else {
                         _parent._adminLock.Unlock();
                     }
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::AddRef()->PID<%d><%d> _refCount<%d>\n", getpid(), gettid(),_refCount);
                     return (Core::ERROR_NONE);
                 }
                 uint32_t Instantiate(
@@ -2753,9 +2766,9 @@ namespace PluginHost {
                     uint32_t id;
                     RPC::Config config(_connector, _comms.Application(), persistentPath, _comms.SystemPath(), dataPath, volatilePath, _comms.AppPath(), _comms.ProxyStubPath(), _comms.PostMortemPath());
                     RPC::Object instance(libraryName, className, callsign, interfaceId, version, user, group, threads, priority, RPC::Object::HostType::LOCAL, systemRootPath, _T(""), configuration);
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::Instantiate()->PID<%d><%d> RPC::Communicator::Process process(requestId, config, instance)\n", getpid(), gettid());
                     RPC::Communicator::Process process(requestId, config, instance);
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteInstantiation::Instantiate()->PID<%d><%d> process.Launch(id) \n", getpid(), gettid());
                     return (process.Launch(id));
                 }
 
@@ -2824,7 +2837,7 @@ POP_WARNING()
                     static uint32_t previousState = 0;
                     uint32_t changedFlags = (previousState ^ Value());
                     previousState = Value();
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystems::Dispatch()->PID<><>\n", getpid(), gettid());
                     if ((changedFlags & (1 << ISubSystem::NETWORK)) != 0) {
                          const_cast<PluginHost::Config&>(_parent.Configuration()).UpdateAccessor();
                     }
@@ -2977,7 +2990,7 @@ POP_WARNING()
             void Initialize(const string& callsign, PluginHost::IShell* entry)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Initialize()->PID<%d><%d>callsign<%s>\n", getpid(), gettid(), callsign.c_str());
                 Notifiers::iterator index(_notifiers.begin());
 
                 while (index != _notifiers.end()) {
@@ -2994,7 +3007,7 @@ POP_WARNING()
             void Activated(const string& callsign, PluginHost::IShell* entry)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Activated()->PID<%d><%d>callsign<%s>\n", getpid(), gettid(), callsign.c_str());
                 Notifiers::iterator index(_notifiers.begin());
 
                 while (index != _notifiers.end()) {
@@ -3007,7 +3020,7 @@ POP_WARNING()
             void Deactivated(const string& callsign, PluginHost::IShell* entry)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Deactivated()->PID<%d><%d>callsign<%s>\n", getpid(), gettid(),callsign.c_str());
                 Notifiers::iterator index(_notifiers.begin());
 
                 while (index != _notifiers.end()) {
@@ -3020,7 +3033,7 @@ POP_WARNING()
             void Deinitialized(const string& callsign, PluginHost::IShell* entry)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Deinitialized()->PID<%d><%d>callsign<%s>\n", getpid(), gettid(), callsign.c_str());
                 Notifiers::iterator index(_notifiers.begin());
 
                 while (index != _notifiers.end()) {
@@ -3037,7 +3050,7 @@ POP_WARNING()
             void Unavailable(const string& callsign, PluginHost::IShell* entry)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Unavailable()->PID<%d><%d>callsign<%s>\n", getpid(), gettid(), callsign.c_str());
                 Notifiers::iterator index(_notifiers.begin());
 
                 while (index != _notifiers.end()) {
@@ -3050,7 +3063,7 @@ POP_WARNING()
             void Register(PluginHost::IPlugin::INotification* sink)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Register()->PID<%d><%d>\n", getpid(), gettid());
                 ASSERT(std::find(_notifiers.begin(), _notifiers.end(), sink) == _notifiers.end());
 
                 sink->AddRef();
@@ -3084,7 +3097,7 @@ POP_WARNING()
             void Unregister(const PluginHost::IPlugin::INotification* sink)
             {
                 _notificationLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Unregister()->PID<%d><%d>\n", getpid(), gettid());
                 Notifiers::iterator index(std::find(_notifiers.begin(), _notifiers.end(), sink));
 
                 if (index != _notifiers.end()) {
@@ -3099,7 +3112,7 @@ POP_WARNING()
                 void* result = nullptr;
 
                 const string callsign(name.empty() == true ? _server.Controller()->Callsign() : name);
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::QueryInterfaceByCallsign(const uint32_t id, const string& name)->PID<%d><%d>\n", getpid(), gettid());
                 Core::ProxyType<IShell> service;
 
                 FromIdentifier(callsign, service);
@@ -3114,34 +3127,41 @@ POP_WARNING()
 
             void* Instantiate(const RPC::Object& object, const uint32_t waitTime, uint32_t& sessionId, const string& dataPath, const string& persistentPath, const string& volatilePath)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Instantiate()->PID<%d><%d>processAdministrator.Create()\n", getpid(), gettid());
                 return (_processAdministrator.Create(sessionId, object, waitTime, dataPath, persistentPath, volatilePath));
             }
             void Destroy(const uint32_t id) {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Destroy()->PID<%d><%d>processAdministrator.Destroy()\n", getpid(), gettid());
                 _processAdministrator.Destroy(id);
             }
             void Register(RPC::IRemoteConnection::INotification* sink)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Register()->PID<%d><%d>processAdministrator.Register()\n", getpid(), gettid());
                 _processAdministrator.Register(sink);
             }
             void Unregister(const RPC::IRemoteConnection::INotification* sink)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Unregister()->PID<%d><%d>processAdministrator.Unregister()\n", getpid(), gettid());
                 _processAdministrator.Unregister(sink);
             }
             void Register(IShell::ICOMLink::INotification* sink)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Register()->PID<%d><%d>processAdministrator.Register()\n", getpid(), gettid());
                 _processAdministrator.Register(sink);
             }
             void Unregister(IShell::ICOMLink::INotification* sink)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Unregister()->PID<%d><%d>processAdministrator.Unregister()\n", getpid(), gettid());
                 _processAdministrator.Unregister(sink);
             }
             RPC::IRemoteConnection* RemoteConnection(const uint32_t connectionId)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::RemoteConnection()->PID<%d><%d>_processAdministrator.Connection(connectionId)\n", getpid(), gettid());
                 return (connectionId != 0 ? _processAdministrator.Connection(connectionId) : nullptr);
             }
             void Closed(const uint32_t id) {
                 _adminLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Closed()->PID<%d><%d>\n", getpid(), gettid());
                 // First stop all services running ...
                 ServiceContainer::iterator index(_services.begin());
 
@@ -4601,7 +4621,6 @@ POP_WARNING()
         void Notification(const ForwardMessage& message);
         void Open();
         void Close();
-
         uint32_t Persist()
         {
             Override infoBlob(_config, _services, Configuration().PersistentPath() + PluginOverrideFile);

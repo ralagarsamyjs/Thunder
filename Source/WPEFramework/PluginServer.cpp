@@ -474,35 +474,42 @@ namespace PluginHost
         uint32_t result = Core::ERROR_NONE;
 
         Lock();
-
+        printf("WPEFramework::PluginHost::Server::Service::Resume()->PID<%d><%d> \n", getpid(), gettid());
         IShell::state currentState(State());
 
         if (currentState == IShell::state::ACTIVATION) {
+            printf("WPEFramework::PluginHost::Server::Service::Resume(ACTIVATION)->PID<%d><%d> \n", getpid(), gettid());
             result = Core::ERROR_INPROGRESS;
         } else if ((currentState == IShell::state::DEACTIVATION) || (currentState == IShell::state::DESTROYED) || (currentState == IShell::state::HIBERNATED)) {
+            printf("WPEFramework::PluginHost::Server::Service::Resume(DEACTIVATION || DESTROYED || HIBERNATED)->PID<%d><%d> \n", getpid(), gettid());
             result = Core::ERROR_ILLEGAL_STATE;
         } else if ( (currentState == IShell::state::DEACTIVATED) ) {
+            printf("WPEFramework::PluginHost::Server::Service::Resume(DEACTIVATED)->PID<%d><%d> \n", getpid(), gettid());
             result = Activate(why);
             currentState = State();
         }
 
         if (currentState == IShell::ACTIVATED) {
+            printf("WPEFramework::PluginHost::Server::Service::Resume(ACTIVATED)->PID<%d><%d> calling handler->QueryInterface<PluginHost::IStateControl>()\n", getpid(), gettid());
             // See if we need can and should RESUME.
             IStateControl* stateControl = _handler->QueryInterface<PluginHost::IStateControl>();
             if (stateControl == nullptr) {
                 result = Core::ERROR_BAD_REQUEST;
             }
             else {
+                printf("WPEFramework::PluginHost::Server::Service::Resume(SUSPENDED)->PID<%d><%d> \n", getpid(), gettid());
                 // We have a StateControl interface, so at least start resuming, if not already resumed :-)
                 if (stateControl->State() == PluginHost::IStateControl::SUSPENDED) {
+                    printf("WPEFramework::PluginHost::Server::Service::Resume(SUSPENDED)->PID<%d><%d> calling stateControl->Request(RESUME)\n", getpid(), gettid());
                     result = stateControl->Request(PluginHost::IStateControl::RESUME);
                 }
+                printf("WPEFramework::PluginHost::Server::Service::Resume(SUSPENDED)->PID<%d><%d> calling stateControl->Release()\n", getpid(), gettid());
                 stateControl->Release();
             }
         }
 
         Unlock();
-
+        printf("WPEFramework::PluginHost::Server::Service::Resume()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 
@@ -510,13 +517,16 @@ namespace PluginHost
     {
         Core::hresult result = Core::ERROR_NONE;
 
+        printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>why Entered \n", getpid(), gettid());
         Lock();
 
         IShell::state currentState(State());
 
         if (currentState == IShell::state::DEACTIVATION) {
+            printf("WPEFramework::PluginHost::Server::Service::Deactivate(DEACTIVATION)->PID<%d><%d> ERROR_INPROGRESS\n", getpid(), gettid());
             result = Core::ERROR_INPROGRESS;
         } else if ( ((currentState == IShell::state::ACTIVATION) && (why != IShell::reason::INITIALIZATION_FAILED)) || (currentState == IShell::state::DESTROYED)) {
+            printf("WPEFramework::PluginHost::Server::Service::Deactivate(ACTIVATION|INITIALIZATION_FAILED|DESTROYED)->PID<%d><%d> ERROR_ILLEGAL_STATE \n", getpid(), gettid());
             result = Core::ERROR_ILLEGAL_STATE;
         } else if ( ((currentState == IShell::state::ACTIVATION) && (why == IShell::reason::INITIALIZATION_FAILED)) || (currentState == IShell::state::UNAVAILABLE) || (currentState == IShell::state::ACTIVATED) || (currentState == IShell::state::PRECONDITION) || (currentState == IShell::state::HIBERNATED) ) {
             const Core::EnumerateType<PluginHost::IShell::reason> textReason(why);
@@ -525,46 +535,55 @@ namespace PluginHost
             const string callSign(PluginHost::Service::Configuration().Callsign.Value());
 
             _reason = why;
+            printf("WPEFramework::PluginHost::Server::Service::Deactivate(ACTIVATION|INITIALIZATION_FAILED|UNAVAILABLE|ACTIVATED)->PID<%d><%d>className<%s>callSign<%s>  \n", getpid(), gettid(), className.c_str(), callSign.c_str());
 
             if(currentState == IShell::state::HIBERNATED)
             {
                 uint32_t wakeupResult = Wakeup(3000);
                 if(wakeupResult != Core::ERROR_NONE)
                 {
+                    printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calliing State(ACTIVATED) \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                     //Force Activated state
                     State(ACTIVATED);
                 }
+                printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> currentState = ACTIVATED \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                 currentState = ACTIVATED;
             }
 
             if ( (currentState == IShell::ACTIVATION) || (currentState == IShell::ACTIVATED)) {
                 ASSERT(_handler != nullptr);
 
+                printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calliing State(DEACTIVATION) \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                 State(DEACTIVATION);
                 Unlock();
 
                 if (currentState == IShell::ACTIVATED) {
                     TRACE(Activity, (_T("Deactivating plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
+                    printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> currentState = ACTIVATED calling _administrator.Deactivated() \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                     _administrator.Deactivated(callSign, this);
                 }
 
+                printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> currentState = ACTIVATED calling Server::PostMortem() \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                 // We might require PostMortem analyses if the reason is not really clear. Call the PostMortum installed so it can generate
                 // required logs/OS information before we start to kill it.
                 Server::PostMortem(*this, why, _connection);
 
                 // If we enabled the webserver, we should also disable it.
                 if ((PluginHost::Service::Configuration().WebUI.IsSet()) || (PluginHost::Service::Configuration().WebUI.Value().empty() == false)) {
+                    printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling DisableWebServer() \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                     DisableWebServer();
                 }
-
+                printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling _handler->Deinitialize() \n", getpid(), gettid(), className.c_str(), callSign.c_str());
                 REPORT_DURATION_WARNING( { _handler->Deinitialize(this); }, WarningReporting::TooLongPluginState, WarningReporting::TooLongPluginState::StateChange::DEACTIVATION, callSign.c_str());
 
                 Lock();
 
                 if (_jsonrpc != nullptr) {
+                    printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling _jsonrpc->Deactivate()\n", getpid(), gettid(), className.c_str(), callSign.c_str());
                     _jsonrpc->Deactivate();
                 }
                 if (_external.Connector().empty() == false) {
+                    printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling _external.Close(0)\n", getpid(), gettid(), className.c_str(), callSign.c_str());
                     _external.Close(0);
                 }
             }
@@ -573,7 +592,7 @@ namespace PluginHost
 
                 SYSLOG(Logging::Shutdown, (_T("Deactivated plugin [%s]:[%s]"), className.c_str(), callSign.c_str()));
 
-
+                printf("WPEFramework::PluginHost::Server::Service::Deactivate(currentState != IShell::state::ACTIVATION)->PID<%d><%d>className<%s>callSign<%s> _administrator.Notification()\n", getpid(), gettid(), className.c_str(), callSign.c_str());
 #if THUNDER_RESTFULL_API
                 _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"deactivated\",\"reason\":\"") + textReason.Data() + _T("\"}"));
 #endif
@@ -582,25 +601,31 @@ namespace PluginHost
 
             }
 
+            printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling _State(why == CONDITIONS ? PRECONDITION : DEACTIVATED)\n", getpid(), gettid(), className.c_str(), callSign.c_str());
+
             State(why == CONDITIONS ? PRECONDITION : DEACTIVATED);
 
+            printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling _administrator.Deinitialized(callSign, this)\n", getpid(), gettid(), className.c_str(), callSign.c_str());
             _administrator.Deinitialized(callSign, this);
 
+            printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d>className<%s>callSign<%s> calling ReleaseInterfaces()\n", getpid(), gettid(), className.c_str(), callSign.c_str());
             // We have no need for his module anymore..
             ReleaseInterfaces();
         }
 
 
         Unlock();
-
+        printf("WPEFramework::PluginHost::Server::Service::Deactivate()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 
     uint32_t Server::Service::Suspend(const reason why) {
 
         uint32_t result = Core::ERROR_NONE;
+        printf("WPEFramework::PluginHost::Server::Service::Suspend()->PID<%d><%d>why Entered \n", getpid(), gettid());
 
         if (Startup() == PluginHost::IShell::startup::DEACTIVATED) {
+            printf("WPEFramework::PluginHost::Server::Service::Suspend(Startup() == PluginHost::IShell::startup::DEACTIVATED)->PID<%d><%d>calling Deactivate(why) \n", getpid(), gettid());
             // We need to shutdown completely
             result = Deactivate(why);
         }
@@ -610,27 +635,33 @@ namespace PluginHost
             IShell::state currentState(State());
 
             if (currentState == IShell::state::DEACTIVATION) {
+                printf("WPEFramework::PluginHost::Server::Service::Suspend(currentState == IShell::state::DEACTIVATION)->PID<%d><%d> Core::ERROR_INPROGRESS\n", getpid(), gettid());
                 result = Core::ERROR_INPROGRESS;
             } else if ((currentState == IShell::state::ACTIVATION) || (currentState == IShell::state::DESTROYED) || (currentState == IShell::state::HIBERNATED)) {
+                printf("WPEFramework::PluginHost::Server::Service::Suspend(IShell::state::DEACTIVATION|DESTROYED|HIBERNATED)->PID<%d><%d> Core::ERROR_ILLEGAL_STATE\n", getpid(), gettid());
                 result = Core::ERROR_ILLEGAL_STATE;
             } else if ((currentState == IShell::state::ACTIVATED) || (currentState == IShell::state::PRECONDITION)) {
+                printf("WPEFramework::PluginHost::Server::Service::Suspend(IShell::state::ACTIVATED|PRECONDITION)->PID<%d><%d> calling _handler->QueryInterface<PluginHost::IStateControl>()\n", getpid(), gettid());
                 // See if we need can and should SUSPEND.
                 IStateControl* stateControl = _handler->QueryInterface<PluginHost::IStateControl>();
                 if (stateControl == nullptr) {
+                    printf("WPEFramework::PluginHost::Server::Service::Suspend()->PID<%d><%d> calling Core::ERROR_BAD_REQUEST \n", getpid(), gettid());
                     result = Core::ERROR_BAD_REQUEST;
                 }
                 else {
                     // We have a StateControl interface, so at least start suspending, if not already suspended :-)
                     if (stateControl->State() == PluginHost::IStateControl::RESUMED) {
+                        printf("WPEFramework::PluginHost::Server::Service::Suspend()->PID<%d><%d> calling tateControl->Request(PluginHost::IStateControl::SUSPEND) \n", getpid(), gettid());
                         result = stateControl->Request(PluginHost::IStateControl::SUSPEND);
                     }
+                    printf("WPEFramework::PluginHost::Server::Service::Suspend()->PID<%d><%d> calling stateControl->Release() \n", getpid(), gettid());
                     stateControl->Release();
                 }
             }
 
             Unlock();
         }
-
+        printf("WPEFramework::PluginHost::Server::Service::Suspend()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 
@@ -638,7 +669,7 @@ namespace PluginHost
         Core::hresult result = Core::ERROR_NONE;
 
         Lock();
-
+        printf("WPEFramework::PluginHost::Server::Service::Unavailable()->PID<%d><%d> Entered \n", getpid(), gettid());
         IShell::state currentState(State());
 
         if ((currentState == IShell::state::DEACTIVATION) ||
@@ -662,9 +693,12 @@ namespace PluginHost
 
             TRACE(Activity, (Core::Format(_T("Unavailable plugin [%s]:[%s]"), className.c_str(), callSign.c_str())));
 
+            printf("WPEFramework::PluginHost::Server::Service::Unavailable()->PID<%d><%d> calling State(UNAVAILABLE) \n", getpid(), gettid());
             State(UNAVAILABLE);
+            printf("WPEFramework::PluginHost::Server::Service::Unavailable()->PID<%d><%d> calling _administrator.Unavailable(callSign, this) \n", getpid(), gettid());
             _administrator.Unavailable(callSign, this);
 
+            printf("WPEFramework::PluginHost::Server::Service::Unavailable()->PID<%d><%d> calling _administrator.Notification() \n", getpid(), gettid());
 #if THUNDER_RESTFULL_API
             _administrator.Notification(_T("{\"callsign\":\"") + callSign + _T("\",\"state\":\"unavailable\",\"reason\":\"") + textReason.Data() + _T("\"}"));
 #endif
@@ -673,7 +707,7 @@ namespace PluginHost
         }
 
         Unlock();
-
+        printf("WPEFramework::PluginHost::Server::Service::Unavailable()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
 
     }
@@ -682,7 +716,7 @@ namespace PluginHost
         Core::hresult result = Core::ERROR_NONE;
 
         Lock();
-
+        printf("WPEFramework::Core::hresult WPEFramework::PluginHost::Server::Service::Hibernate()->PID<%d><%d> Entered \n", getpid(), gettid());
         IShell::state currentState(State());
 
         if (currentState != IShell::state::ACTIVATED) {
@@ -692,6 +726,7 @@ namespace PluginHost
             result = Core::ERROR_INPROC;
         }
         else {
+            printf("WPEFramework::Core::hresult WPEFramework::PluginHost::Server::Service::Hibernate()->PID<%d><%d> calling  _connection->QueryInterface< RPC::IMonitorableProcess>() \n", getpid(), gettid());
             // Oke we have an Connection so there is something to Hibernate..
             RPC::IMonitorableProcess* local = _connection->QueryInterface< RPC::IMonitorableProcess>();
 
@@ -704,7 +739,7 @@ namespace PluginHost
                 Core::process_t parentPID = local->ParentPID();
                 local->Release();
                 Unlock();
-
+                printf("WPEFramework::Core::hresult WPEFramework::PluginHost::Server::Service::Hibernate()->PID<%d><%d>Hibernation of plugin [%s] process [%u] \n", getpid(), gettid(), Callsign().c_str(), parentPID);
                 TRACE(Activity, (_T("Hibernation of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
                 result = HibernateProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
                 Lock();
@@ -721,6 +756,7 @@ namespace PluginHost
                 if (result != Core::ERROR_NONE && result != Core::ERROR_ABORTED) {
                     // try to wakeup Parent process to revert Hibernation and recover
                     TRACE(Activity, (_T("Wakeup plugin [%s] process [%u] on Hibernate error [%d]"), Callsign().c_str(), parentPID, result));
+                    printf("WPEFramework::Core::hresult WPEFramework::PluginHost::Server::Service::Hibernate()->PID<%d><%d> Wakeup plugin [%s] process [%u] on Hibernate error [%d] \n", getpid(), gettid(), Callsign().c_str(), parentPID, result);
                     WakeupProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
                 }
 
@@ -745,7 +781,7 @@ namespace PluginHost
             }
         }
         Unlock();
-
+        printf("WPEFramework::Core::hresult WPEFramework::PluginHost::Server::Service::Hibernate()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
 
     }
@@ -753,6 +789,7 @@ namespace PluginHost
     uint32_t Server::Service::Wakeup(const uint32_t timeout VARIABLE_IS_NOT_USED) {
         Core::hresult result = Core::ERROR_NONE;
 
+        printf("WPEFramework::PluginHost::Server::Service::Wakeup()->PID<%d><%d>\n", getpid(), gettid());
         IShell::state currentState(State());
 
         if (currentState != IShell::state::HIBERNATED) {
@@ -775,6 +812,7 @@ namespace PluginHost
                 WakeupChildren(parentPID, timeout);
 
                 TRACE(Activity, (_T("Wakeup of plugin [%s] process [%u]"), Callsign().c_str(), parentPID));
+                printf("WPEFramework::PluginHost::Server::Service::Wakeup()->PID<%d><%d> Wakeup of plugin [%s] process [%u]\n", getpid(), gettid(), Callsign().c_str(), parentPID);
                 result = WakeupProcess(timeout, parentPID, _administrator.Configuration().HibernateLocator().c_str(), _T(""), &_hibernateStorage);
 #else
                 result = Core::ERROR_NONE;
@@ -786,7 +824,7 @@ namespace PluginHost
                 local->Release();
             }
         }
-
+        printf("WPEFramework::PluginHost::Server::Service::Wakeup()->PID<%d><%d> return \n", getpid(), gettid());
         return (result);
     }
 

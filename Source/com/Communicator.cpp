@@ -170,7 +170,7 @@ namespace RPC {
                 _destructors.emplace(std::piecewise_construct,
                     std::forward_as_tuple(id),
                     std::forward_as_tuple(&entry));
-
+                printf("WPEFramework::RPC::ProcessShutdown::Destruct()->PID<%d><%d>called Run()\n", getpid(), gettid());
                 Run();
             }
 
@@ -217,7 +217,7 @@ namespace RPC {
                 else {
                     printf("WPEFramework::RPC::ProcessShutdown::Worker()->PID<%d><%d>calling index->second->Release() \n", getpid(), gettid());
                     index->second->Release();
-                    printf("WPEFramework::RPC::ProcessShutdown::Worker()->PID<%d><%d>calling i_destructors.erase() \n", getpid(), gettid());
+                    printf("WPEFramework::RPC::ProcessShutdown::Worker()->PID<%d><%d>calling _destructors.erase() \n", getpid(), gettid());
                     index = _destructors.erase(index);
                 }
             }

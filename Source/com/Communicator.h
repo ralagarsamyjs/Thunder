@@ -358,11 +358,13 @@ namespace RPC {
                 : _channel()
                 , _id(_sequenceId++)
                 , _remoteId(0) {
+                    printf("WPEFramework::RPC::Communicator::RemoteConnection::RemoteConnection()->PID<%d><%dd>Constructor _channel, _id(_sequenceId++<>), _remoteId<%d>\n", getpid(), gettid(),_remoteId);
             }
             RemoteConnection(Core::ProxyType<Client>& channel, const uint32_t remoteId)
                 : _channel(channel)
                 , _id(_sequenceId++)
                 , _remoteId(remoteId) {
+                printf("WPEFramework::RPC::Communicator::RemoteConnection::RemoteConnection(channel, remoteId)->PID<%d><%dd>Constructor _channel, _id(_sequenceId++<>), _remoteId<%d>\n", getpid(), gettid(),_remoteId);
             }
 
         public:
@@ -393,16 +395,19 @@ namespace RPC {
             void Open(Core::ProxyType<Client>& channel, const uint32_t id)
             {
                 ASSERT(_channel.IsValid() == false);
-
+                printf("WPEFramework::RPC::Communicator::RemoteConnection::Open()->PID<%d><%d> channel.IsValid()==false\n", getpid(), gettid());
                 // Seems we received an interface from the otherside. Prepare the actual stub around it.
                 TRACE_L1("Link announced. All up and running %d, has announced itself.", Id());
 
+                printf("WPEFramework::RPC::Communicator::RemoteConnection::Open()->PID<%d><%d> _channel=channel, _remoteId = id\n", getpid(), gettid());
                 _channel = channel;
                 _remoteId = id;
             }
             void Close()
             {
+                printf("WPEFramework::RPC::Communicator::RemoteConnection::Close()->PID<%d><%d> channel.IsValid()\n", getpid(), gettid());
                 if (_channel.IsValid() == true) {
+                    printf("WPEFramework::RPC::Communicator::RemoteConnection::Close()->PID<%d><%d> _channel->Source().Close(0)\n", getpid(), gettid());
                     _channel->Source().Close(0);
                 }
             }
@@ -432,6 +437,7 @@ namespace RPC {
                 , _callsign(callsign)
                 , _cycle(0)
                 , _time(0) {
+                    printf("WPEFramework::RPC::Communicator::MonitorableProcess::MonitorableProcess()->PID<%d><%d>\n", getpid(), gettid());
             }
             ~MonitorableProcess() override = default;
 
@@ -455,21 +461,25 @@ namespace RPC {
                 return (_time);
             }
             inline void Destruct() {
+                printf("WPEFramework::RPC::Communicator::MonitorableProcess::Destruct()->PID<%d><%d> calling EndProcess()\n", getpid(), gettid());    
                 // Unconditionally KILL !!!
                 while (EndProcess() != 0) {
                     ++_cycle;
                     ::SleepMs(1);
                 }
                 _cycle = ~0;
+                printf("WPEFramework::RPC::Communicator::MonitorableProcess::Destruct()->PID<%d><%d> calling _parent.Terminated(this)\n", getpid(), gettid());
                 _parent.Terminated(this);
             }
             inline bool Destruct(uint64_t& timeSlot) {
-
+                printf("WPEFramework::RPC::Communicator::MonitorableProcess::Destruct(timeSlot)->PID<%d><%d>\n", getpid(), gettid());    
                 if (_time <= timeSlot) {
+                    printf("WPEFramework::RPC::Communicator::MonitorableProcess::Destruct(timeSlot)->PID<%d><%d> calling EndProcess()\n", getpid(), gettid());    
                     uint32_t delay = EndProcess();
 
                     if (delay == 0) {
                         _cycle = ~0;
+                        printf("WPEFramework::RPC::Communicator::MonitorableProcess::Destruct(timeSlot)->PID<%d><%d> calling _parent.Terminated(this)\n", getpid(), gettid());    
                         _parent.Terminated(this);
                     }
                     else {
@@ -581,10 +591,10 @@ namespace RPC {
                     Core::SystemInfo::SetEnvironment(_T("LD_LIBRARY_PATH"), newLDLibraryPaths, true);
                     TRACE_L1("Populated New LD_LIBRARY_PATH : %s", newLDLibraryPaths.c_str());
                 }
-
+                printf("WPEFramework::RPC::Communicator::Process::Launch(()->PID<%d><%d> calling Core::Process fork(false)\n", getpid(), gettid());
                 // Start the external process launch..
                 Core::Process fork(false);
-
+                printf("WPEFramework::RPC::Communicator::Process::Launch(()->PID<%d><%d> calling fork.Launch(_options, &id)\n", getpid(), gettid());
                 uint32_t result = fork.Launch(_options, &id);
                 _id = id;
 
@@ -656,6 +666,7 @@ namespace RPC {
                 , _id(0)
                 , _process(RemoteConnection::Id(), config, instance)
             {
+                printf("WPEFramework::RPC::Communicator::LocalProcess::LocalProcess()->PID<%d><%d> Constructor MonitorableProcess(instance.Callsign(), parent), _process()\n", getpid(), gettid());
             }
             ~LocalProcess() override = default;
 
@@ -1311,13 +1322,16 @@ namespace RPC {
         public:
             void Link(RemoteConnectionMap& connectionMap, const uint32_t id)
             {
+                printf("WPEFramework::RPC::Communicator::ChannelLink::Link()->PID<%d><%d>connectionMap<>id<%d>\n", getpid(), gettid(), id);
                 _connectionMap = &connectionMap;
                 _id = id;
             }
             void StateChange()
             {
+                printf("WPEFramework::RPC::Communicator::ChannelLink::StateChange()->PID<%d><%d>\n", getpid(), gettid());
                 // If the connection closes, we need to clean up....
                 if ((_channel.IsOpen() == false) && (_connectionMap != nullptr)) {
+                    printf("WPEFramework::RPC::Communicator::ChannelLink::StateChange()->PID<%d><%d>calling _connectionMap->Closed(_id<%d>)\n", getpid(), gettid(), _id);
                     _connectionMap->Closed(_id);
                 }
             }
@@ -1359,7 +1373,7 @@ namespace RPC {
                 void Procedure(Core::IPCChannel& channel, Core::ProxyType<Core::IIPC>& data) override {
 
                     Core::ProxyType<AnnounceMessage> message(data);
-
+                    printf("WPEFramework::RPC::Communicator::ChannelServer::AnnounceHandler::Procedure()->PID<%d><%d>\n", getpid(), gettid());
                     ASSERT(message.IsValid() == true);
                     ASSERT(dynamic_cast<Client*>(&channel) != nullptr);
 
@@ -1376,11 +1390,11 @@ namespace RPC {
                         #if defined(WARNING_REPORTING_ENABLED)
                         jsonDefaultWarningReportingSettings = WarningReporting::WarningReportingUnit::Instance().Defaults();
                         #endif
-
+                        printf("WPEFramework::RPC::Communicator::ChannelServer::AnnounceHandler::Procedure()->PID<%d><%d>calling _parent.Announce()\n", getpid(), gettid());
                         void* result = _parent.Announce(proxyChannel, message->Parameters(), message->Response());
 
                         message->Response().Set(instance_cast<void*>(result), proxyChannel->Extension().Id(), _parent.ProxyStubPath(), jsonDefaultMessagingSettings, jsonDefaultWarningReportingSettings);
-
+                        printf("WPEFramework::RPC::Communicator::ChannelServer::AnnounceHandler::Procedure()->PID<%d><%d>calling channel.ReportResponse(data)\n", getpid(), gettid());
                         // We are done, report completion
                         channel.ReportResponse(data);
                     }
@@ -1404,6 +1418,7 @@ namespace RPC {
                 : BaseClass(remoteNode, CommunicationBufferSize)
                 , _proxyStubPath(proxyStubPath)
                 , _connections(processes) {
+                    printf("WPEFramework::RPC::Communicator::ChannelServer::ChannelServer()->PID<%d><%d>\n", getpid(), gettid());
                 BaseClass::Register(InvokeMessage::Id(), Core::ProxyType<Core::IIPCServer>(Core::ProxyType<InvokeHandler>::Create()));
                 BaseClass::Register(AnnounceMessage::Id(), Core::ProxyType<Core::IIPCServer>(Core::ProxyType<AnnounceHandler>::Create(*this)));
             }
