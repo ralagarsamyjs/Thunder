@@ -9,12 +9,12 @@
             "name": "Local Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${config:thunder.installPath}/usr/bin/WPEFramework",
+            "program": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/bin/WPEFramework",
             "args": [
-                "-c${config:thunder.installPath}/etc/WPEFramework/config.json"
+                "-c/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/etc/WPEFramework/config.json"
              ],
             "stopAtEntry": false,
-            "cwd": "${config:thunder.installPath}",
+            "cwd": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install",
             "logging": {
                 "moduleLoad": false,
                 "trace": true
@@ -22,7 +22,7 @@
             "externalConsole": false,
             "linux": {
                 "name": "Local Debug WPEFramework on Linux",
-                "program": "${config:thunder.installPath}/usr/bin/WPEFramework",
+                "program": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/bin/WPEFramework",
                 "type":"cppdbg",
                 "request": "launch",
                 "MIMode": "gdb",
@@ -37,18 +37,18 @@
                 "sourceFileMap": {
                 },
                 "environment": [
-                    { "name": "LD_LIBRARY_PATH", "value": "${config:thunder.installPath}/usr/lib" },
-                    { "name": "PATH", "value": "${config:thunder.installPath}/usr/bin"},
+                    { "name": "LD_LIBRARY_PATH", "value": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/lib" },
+                    { "name": "PATH", "value": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/bin"},
                 ],
-                "additionalSOLibSearchPath": "${config:thunder.installPath}/usr/lib;/usr/local/lib;/usr/lib;/lib",
+                "additionalSOLibSearchPath": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/lib;/usr/local/lib;/usr/lib;/lib",
             },
         },
         {
             "name": "Remote Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${config:thunder.installPath}/usr/bin/WPEFramework",
-            "cwd": "${config:thunder.installPath}",
+            "program": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/bin/WPEFramework",
+            "cwd": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install",
             "stopAtEntry": false,
             "logging": {
                 "moduleLoad": false,
@@ -58,7 +58,7 @@
               },
             "linux": {
                 "name": "Remote Debug WPEFramework on Linux",
-                "program": "${config:thunder.installPath}/usr/bin/WPEFramework",
+                "program": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/bin/WPEFramework",
                 "type":"cppdbg",
                 "request": "launch",
                 "MIMode": "gdb",
@@ -73,9 +73,9 @@
                 ],
                 "sourceFileMap": {
                     // "remote": "local"
-                    "/usr": "${config:thunder.installPath}/usr",
-                    "/usr/bin": "${config:thunder.installPath}/usr/bin",
-                    "/usr/lib": "${config:thunder.installPath}/usr/lib",
+                    "/usr": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr",
+                    "/usr/bin": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/bin",
+                    "/usr/lib": "/home/ralagarsamy/workspace/projects/opensource/rdkcentral/wpeframework/R4_4-test/install/usr/lib",
                 },
                 "preLaunchTask": "Prepare WPEFramework for remote gdb debugging",
                 "postDebugTask": "Clean debugging run"

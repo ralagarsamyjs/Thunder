@@ -92,6 +92,7 @@ namespace Plugin {
 
             public:
                 void Dispatch() {
+                    printf("WPEFramework::Plugin::Controller::Sink::Job::Dispatch()->PID<%d><%d> calling _parent.SubSystems()\n", getpid(), gettid());
                     _parent.SubSystems();
                 }
 
@@ -240,6 +241,7 @@ namespace Plugin {
         }
         inline void Notification(const PluginHost::Server::ForwardMessage& message)
         {
+            printf("WPEFramework::Plugin::Controller::Notification()->PID<%d><%d> calling Notify(all, message)\n", getpid(), gettid());
             Notify("all", message);
         }
 

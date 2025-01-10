@@ -103,6 +103,7 @@ PUSH_WARNING(DISABLE_WARNING_MULTPILE_INHERITENCE_OF_BASE_CLASS)
                 : CONTEXT(std::forward<Args>(args)...)
                 , _refCount(0)
             {
+                printf("WPEFramework::Core::ProxyObject<CONTEXT>::ProxyObject()->PID<%d><%d>CONTEXT<%s><%p>\n", getpid(), gettid(), typeid(CONTEXT).name(), (this));
                 __Initialize();
             }
             ~ProxyObject() override
@@ -121,10 +122,12 @@ PUSH_WARNING(DISABLE_WARNING_MULTPILE_INHERITENCE_OF_BASE_CLASS)
         public:
             uint32_t AddRef() const override
             {
+                uint32_t lastRef = _refCount;
                 if (_refCount == 1) {
                     const_cast<ProxyObject<CONTEXT>*>(this)->__Acquire();
                 }
                 _refCount++;
+                printf("WPEFramework::Core::ProxyObject<CONTEXT>::AddRef()->PID<%d><%d>lastRef<%d>CONTEXT<%s><%p>\n", getpid(), gettid(), (lastRef+1), typeid(CONTEXT).name(), (this));
 
                 return (Core::ERROR_NONE);
             }
@@ -133,8 +136,10 @@ PUSH_WARNING(DISABLE_WARNING_MULTPILE_INHERITENCE_OF_BASE_CLASS)
                 uint32_t result = Core::ERROR_NONE;
                 uint32_t lastRef = --_refCount;
 
+                printf("WPEFramework::Core::ProxyObject<CONTEXT>::Release()->PID<%d><%d>lastRef<%d>CONTEXT<%s><%p>\n", getpid(), gettid(), lastRef, typeid(CONTEXT).name(), (this));
                 if (lastRef == 0) {
                     result = Core::ERROR_DESTRUCTION_SUCCEEDED;
+                    printf("WPEFramework::Core::ProxyObject<CONTEXT>::Release()->PID<%d><%d>lastRef<%d>CONTEXT<%s> delete<%p>\n", getpid(), gettid(), lastRef, typeid(CONTEXT).name(), (this));
                     delete this;
                 }
                 else if (lastRef == 1) {

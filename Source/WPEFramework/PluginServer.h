@@ -2837,17 +2837,20 @@ POP_WARNING()
                     static uint32_t previousState = 0;
                     uint32_t changedFlags = (previousState ^ Value());
                     previousState = Value();
-                    printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystems::Dispatch()->PID<><>\n", getpid(), gettid());
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystems::Dispatch()->PID<%d><%d>\n", getpid(), gettid());
                     if ((changedFlags & (1 << ISubSystem::NETWORK)) != 0) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystems::Dispatch(ISubSystem::NETWORK)->PID<%d><%d>\n", getpid(), gettid());
                          const_cast<PluginHost::Config&>(_parent.Configuration()).UpdateAccessor();
                     }
 
                     if ((changedFlags & (1 << ISubSystem::SECURITY)) != 0) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystems::Dispatch(ISubSystem::SECURITY)->PID<%d><%d> calling _parent.Security()\n", getpid(), gettid());
                         _parent.Security(SystemInfo::IsActive(ISubSystem::SECURITY));
                     }
 
                     Core::ProxyType<Core::IDispatch> job(_job.Submit());
                     if (job.IsValid() == true) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystems::Dispatch()->PID<%d><%d> calling _parent.WorkerPool().Submit(job)\n", getpid(), gettid());
                         _parent.WorkerPool().Submit(job);
                     }
                 }
@@ -2948,11 +2951,15 @@ POP_WARNING()
             {
                 _adminLock.Lock();
 
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Security()->PID<%d><%d>enabled<%d>\n", getpid(), gettid(), enabled);
+
                 if ((_authenticationHandler == nullptr) ^ (enabled == false)) {
                     if (_authenticationHandler == nullptr) {
                         // Let get the AuthentcationHandler.
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::Security(_authenticationHandler == nullptr)->PID<%d><%d>calling QueryInterfaceByCallsign()\n", getpid(), gettid());
                         _authenticationHandler = reinterpret_cast<IAuthenticate*>(QueryInterfaceByCallsign(IAuthenticate::ID, _subSystems.SecurityCallsign()));
                     } else {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::Security(authenticationHandler != nullptr)->PID<%d><%d> SecurityRevoke\n", getpid(), gettid());
                         // Remove the security from all the channels.
                         _server.Dispatcher().SecurityRevoke(Configuration().Security());
                     }
@@ -2965,10 +2972,11 @@ POP_WARNING()
                 ISecurity* result;
 
                 _adminLock.Lock();
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Officer()->PID<%d><%d>calling _authenticationHandler->Officer()\n", getpid(), gettid());
                 if (_authenticationHandler != nullptr) {
                     result = _authenticationHandler->Officer(token);
                 } else {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::Officer()->PID<%d><%d>calling Configuration().Security()\n", getpid(), gettid());
                     result = Configuration().Security();
                 }
 
@@ -2977,14 +2985,17 @@ POP_WARNING()
             }
             inline uint32_t Submit(const uint32_t id, const Core::ProxyType<Core::JSON::IElement>& response)
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::Submit()->PID<%d><%d>calling _server.Dispatcher().Submit()\n", getpid(), gettid());
                 return (_server.Dispatcher().Submit(id, response));
             }
             inline uint32_t SubSystemInfo() const
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystemInfo()->PID<%d><%d>calling _subSystems.Value()\n", getpid(), gettid());
                 return (_subSystems.Value());
             }
             inline ISubSystem* SubSystemsInterface()
             {
+                printf("WPEFramework::PluginHost::Server::ServiceMap::SubSystemsInterface()->PID<%d><%d>calling _subSystems.QueryInterface()\n", getpid(), gettid());
                 return (reinterpret_cast<ISubSystem*>(_subSystems.QueryInterface(ISubSystem::ID)));
             }
             void Initialize(const string& callsign, PluginHost::IShell* entry)
