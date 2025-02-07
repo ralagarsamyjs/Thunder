@@ -358,13 +358,13 @@ namespace RPC {
                 : _channel()
                 , _id(_sequenceId++)
                 , _remoteId(0) {
-                    printf("WPEFramework::RPC::Communicator::RemoteConnection::RemoteConnection()->PID<%d><%dd>Constructor _channel, _id(_sequenceId++<>), _remoteId<%d>\n", getpid(), gettid(),_remoteId);
+                    printf("WPEFramework::RPC::Communicator::RemoteConnection::RemoteConnection()->PID<%d><%d>Constructor _channel, _id(_sequenceId++<>), _remoteId<%d>\n", getpid(), gettid(),_remoteId);
             }
             RemoteConnection(Core::ProxyType<Client>& channel, const uint32_t remoteId)
                 : _channel(channel)
                 , _id(_sequenceId++)
                 , _remoteId(remoteId) {
-                printf("WPEFramework::RPC::Communicator::RemoteConnection::RemoteConnection(channel, remoteId)->PID<%d><%dd>Constructor _channel, _id(_sequenceId++<>), _remoteId<%d>\n", getpid(), gettid(),_remoteId);
+                printf("WPEFramework::RPC::Communicator::RemoteConnection::RemoteConnection(channel, remoteId)->PID<%d><%d>Constructor _channel, _id(_sequenceId++<>), _remoteId<%d>\n", getpid(), gettid(),_remoteId);
             }
 
         public:
@@ -1149,19 +1149,23 @@ namespace RPC {
                     printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d>calling Request(channel, info)\n", getpid(), gettid());
                     Request(channel, info);
                 } else {
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d> This is an announce message from a process that wasn't created by us \n", getpid(), gettid());
 
                     if (channel->Extension().IsRegistered() == false) {
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d> Create RemoteConnection info.Id<%d> \n", getpid(), gettid(), info.Id());
 
                         // This is an announce message from a process that wasn't created by us. So typically this is
                         // An RPC client reaching out to an RPC server. The RPCServer does not spawn processes it just
                         // listens for clients requesting service.
                         Communicator::RemoteConnection* remoteConnection = Core::Service<RemoteConnection>::Create<RemoteConnection>(channel, info.Id());
 
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d> info.Id<%d>remoteConnection->Id<%d>\n", getpid(), gettid(), info.Id(),remoteConnection->Id());
                         channel->Extension().Link(*this, remoteConnection->Id());
                         ASSERT(remoteConnection != nullptr);
 
                         // Add ref is done during the creation, no need to take another reference unless we also would release it after
                         // insertion :-)
+                        printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d> added in _connections.emplace(id, connection) \n", getpid(), gettid());
                         _connections.emplace(
                             std::piecewise_construct,
                                 std::forward_as_tuple(remoteConnection->Id()),
@@ -1169,7 +1173,7 @@ namespace RPC {
 
                         Activated(remoteConnection);
                     }
-
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Announce()->PID<%d><%d> Handle(channel, info, response)\n", getpid(), gettid());
                     result = Handle(channel, info, response);
                 }
 
@@ -1193,6 +1197,7 @@ namespace RPC {
         private:
             void Activated(RPC::IRemoteConnection* connection)
             {
+                printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Request()->PID<%d><%d> Activated() \n", getpid(), gettid());
                 Observers::iterator index(_observers.begin());
                 while (index != _observers.end()) {
                     (*index)->Activated(connection);
@@ -1279,7 +1284,7 @@ namespace RPC {
 
                 } else if (info.InterfaceId() != static_cast<uint32_t>(~0)) {
 
-                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.InterfaceId() != static_cast<uint32_t>(~0))->PID<%d><%d> calling _parent.Acquire()\n", getpid(), gettid());
+                    printf("WPEFramework::RPC::Communicator::RemoteConnectionMap::Handle(info.InterfaceId() != static_cast<uint32_t>(~0))->PID<%d><%d>info.ClassName<%s>info.InterfaceId<%d> calling _parent.Acquire()\n", getpid(), gettid(), info.ClassName().c_str(), info.InterfaceId());
                     // See if we have something we can return right away, if it has been requested..
                     result = _parent.Acquire(info.ClassName(), info.InterfaceId(), info.VersionId());
 
@@ -1393,6 +1398,7 @@ namespace RPC {
                         printf("WPEFramework::RPC::Communicator::ChannelServer::AnnounceHandler::Procedure()->PID<%d><%d>calling _parent.Announce()\n", getpid(), gettid());
                         void* result = _parent.Announce(proxyChannel, message->Parameters(), message->Response());
 
+                        printf("WPEFramework::RPC::Communicator::ChannelServer::AnnounceHandler::Procedure()->PID<%d><%d>forming Response Message for AnnounceMessage\n", getpid(), gettid());
                         message->Response().Set(instance_cast<void*>(result), proxyChannel->Extension().Id(), _parent.ProxyStubPath(), jsonDefaultMessagingSettings, jsonDefaultWarningReportingSettings);
                         printf("WPEFramework::RPC::Communicator::ChannelServer::AnnounceHandler::Procedure()->PID<%d><%d>calling channel.ReportResponse(data)\n", getpid(), gettid());
                         // We are done, report completion
@@ -1430,6 +1436,7 @@ namespace RPC {
                 : BaseClass(remoteNode, CommunicationBufferSize)
                 , _proxyStubPath(proxyStubPath)
                 , _connections(processes) {
+                printf("WPEFramework::RPC::Communicator::ChannelServer::ChannelServer(remoteNode,processes,proxyStubPath,handler)->PID<%d><%d>\n", getpid(), gettid());
                 BaseClass::Register(InvokeMessage::Id(), handler);
                 BaseClass::Register(AnnounceMessage::Id(), Core::ProxyType<Core::IIPCServer>(Core::ProxyType<AnnounceHandler>::Create(*this)));
             }
@@ -1669,6 +1676,7 @@ POP_WARNING()
             INTERFACE* result = nullptr;
             printf(" WPEFramework::RPC::CommunicatorClient::Open()->PID<%d><%d> INTERFACE<%s> INTERFACE::ID<%d> className<%s>\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(INTERFACE).name()).Text()).c_str(), INTERFACE::ID, className.c_str());
             if (Open(waitTime, className, INTERFACE::ID, version) == Core::ERROR_NONE) {
+                printf("WPEFramework::RPC::CommunicatorClient::Open()->PID<%d><%d> calling WaitForCompletion(waitTime<%d>)\n", getpid(), gettid(), waitTime);
                 // Oke we could open the channel, lets get the interface
                 result = WaitForCompletion<INTERFACE>(waitTime);
             }
@@ -1821,18 +1829,19 @@ POP_WARNING()
 
             ASSERT(_announceMessage.Parameters().InterfaceId() == INTERFACE::ID);
             ASSERT(_announceMessage.Parameters().Implementation() == 0);
-            printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> INTERFACE<%s>WaitForCompletion()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(INTERFACE).name()).Text()).c_str());
+            printf(" WPEFramework::RPC::CommunicatorClient::WaitForCompletion()->PID<%d><%d> INTERFACE<%s>WaitForCompletion()\n", getpid(), gettid(), (Core::ClassNameOnly(typeid(INTERFACE).name()).Text()).c_str());
             // Lock event until Dispatch() sets it.
             if (_announceEvent.Lock(waitTime) == Core::ERROR_NONE) {
 
                 Core::instance_id implementation(_announceMessage.Response().Implementation());
-                printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> _announceMessage.Response().Implementation<0x%x>\n", getpid(), gettid(), implementation);
+                printf(" WPEFramework::RPC::CommunicatorClient::WaitForCompletion()->PID<%d><%d> _announceMessage.Response().Implementation<0x%x>\n", getpid(), gettid(), implementation);
 
                 if (implementation) {
+                    printf("WPEFramework::RPC::CommunicatorClient::WaitForCompletion()->PID<%d><%d> Initialise baseChannel(*this)\n", getpid(), gettid());
                     Core::ProxyType<Core::IPCChannel> baseChannel(*this);
 
                     ASSERT(baseChannel.IsValid() == true);
-                    printf(" WPEFramework::RPC::CommunicatorClient::Acquire()->PID<%d><%d> Administrator::Instance().ProxyInstance()\n", getpid(), gettid());
+                    printf(" WPEFramework::RPC::CommunicatorClient::WaitForCompletion()->PID<%d><%d> Administrator::Instance().ProxyInstance()\n", getpid(), gettid());
                     Administrator::Instance().ProxyInstance(baseChannel, implementation, true, result);
                 }
             }

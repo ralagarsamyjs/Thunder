@@ -2636,7 +2636,7 @@ namespace PluginHost {
 
                 void* Acquire(const string& className, const uint32_t interfaceId, const uint32_t version) override
                 {
-                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Acquire()->PID<%d><%d> _parent.Acquire()\n", getpid(), gettid());    
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::CommunicatorServer::Acquire()->PID<%d><%d>interfaceId<%d>className<%s>version<%d> _parent.Acquire()\n", getpid(), gettid(), interfaceId, className.c_str(), version);
                     return (_parent.Acquire(interfaceId, className, version));
                 }
 
@@ -2931,7 +2931,7 @@ POP_WARNING()
                 , _configObserver(*this, server._config.PluginConfigPath())
                 , _compositPlugins()
             {
-                printf("WPEFramework::PluginHost::Server::ServiceMap::ServiceMap()->PID<%d><%d>\n", getpid(), gettid());
+                printf("WPEFramework::PluginHost::Server::ServiceMap::ServiceMap()->PID<%d><%d> Constructor\n", getpid(), gettid());
                 if (server._config.PluginConfigPath().empty() == true) {
                     SYSLOG(Logging::Startup, (_T("Dynamic configs disabled.")));
                 } else if (_configObserver.IsValid() == false) {
@@ -3125,11 +3125,11 @@ POP_WARNING()
                 const string callsign(name.empty() == true ? _server.Controller()->Callsign() : name);
                 printf("WPEFramework::PluginHost::Server::ServiceMap::QueryInterfaceByCallsign(const uint32_t id, const string& name)->PID<%d><%d>\n", getpid(), gettid());
                 Core::ProxyType<IShell> service;
-
+                printf("WPEFramework::PluginHost::Server::ServiceMap::QueryInterfaceByCallsign()->PID<%d><%d> calling FromIdentifier()\n", getpid(), gettid());
                 FromIdentifier(callsign, service);
 
                 if (service.IsValid() == true) {
-
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::QueryInterfaceByCallsign()->PID<%d><%d> calling service->QueryInterface(id)\n", getpid(), gettid());
                     result = service->QueryInterface(id);
                 }
 
@@ -3490,9 +3490,11 @@ POP_WARNING()
 
                     _adminLock.Lock();
                     // className == Connector..
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::Acquire(IRemoteInstantiation::ID)->PID<%d><%d>interfaceId<%d>className<%s>\n", getpid(), gettid(), interfaceId, className.c_str());
                     RemoteInstantiators::iterator index(_instantiators.find(className));
 
                     if (index == _instantiators.end()) {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::Acquire(IRemoteInstantiation::ID)->PID<%d><%d>calling RemoteInstantiation::Create()\n", getpid(), gettid());
                         IRemoteInstantiation* newIF = RemoteInstantiation::Create(*this, _processAdministrator, className);
 
                         ASSERT(newIF != nullptr);
@@ -3503,11 +3505,13 @@ POP_WARNING()
 
                         result = newIF;
                     } else {
+                        printf("WPEFramework::PluginHost::Server::ServiceMap::Acquire(IRemoteInstantiation::ID)->PID<%d><%d>calling QueryInterface()\n", getpid(), gettid());
                         result = index->second->QueryInterface(IRemoteInstantiation::ID);
                     }
 
                     _adminLock.Unlock();
                 } else {
+                    printf("WPEFramework::PluginHost::Server::ServiceMap::Acquire(IRemoteInstantiation::ID)->PID<%d><%d>calling QueryInterfaceByCallsign(interfaceId, className)\n", getpid(), gettid());
                     result = QueryInterfaceByCallsign(interfaceId, className);
                 }
 

@@ -493,6 +493,7 @@ namespace RPC {
 
         uint32_t result = BaseClass::Open(waitTime);
 
+        printf("WPEFramework::RPC::CommunicatorClient::Open()->PID<%d><%d> calling _announceEvent.Lock(waitTime<%d>)\n", getpid(), gettid(), waitTime);
         if ((result == Core::ERROR_NONE) && (_announceEvent.Lock(waitTime) != Core::ERROR_NONE)) {
             result = Core::ERROR_OPENING_FAILED;
         }
@@ -509,6 +510,7 @@ namespace RPC {
         printf("WPEFramework::RPC::ommunicatorClient::Open()->PID<%d><%d> className<%s>interfaceId<%d>\n", getpid(), gettid(), className.c_str(), interfaceId);    
         uint32_t result = BaseClass::Open(waitTime);
 
+        printf("WPEFramework::RPC::CommunicatorClient::Open()->PID<%d><%d> calling _announceEvent.Lock(waitTime<%d>)\n", getpid(), gettid(), waitTime);
         if ((result == Core::ERROR_NONE) && (_announceEvent.Lock(waitTime) != Core::ERROR_NONE)) {
             result = Core::ERROR_OPENING_FAILED;
         }

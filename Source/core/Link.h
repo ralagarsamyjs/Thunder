@@ -44,6 +44,7 @@ namespace Core {
                 , _lock()
                 , _queue(queueSize)
             {
+                printf("WPEFramework::Core::LinkType<...>::SerializerImpl::SerializerImpl()->PID<%d><%d> Constructor\n", getpid(), gettid());
             }
             ~SerializerImpl() override = default;
 
@@ -109,12 +110,14 @@ namespace Core {
                 , _parent(parent)
                 , _pool(queueSize)
             {
+                printf("WPEFramework::Core::LinkType<...>::DeserializerImpl::DeserializerImpl()->PID<%d><%d> Constructor\n", getpid(), gettid());
             }
             DeserializerImpl(ThisClass& parent, ALLOCATOR allocator)
                 : INBOUND::Deserializer()
                 , _parent(parent)
                 , _pool(allocator)
             {
+                printf("WPEFramework::Core::LinkType<...>::DeserializerImpl::DeserializerImpl()->PID<%d><%d> Constructor\n", getpid(), gettid());
             }
             ~DeserializerImpl() override = default;
 
@@ -123,7 +126,7 @@ namespace Core {
             {
                 DEBUG_VARIABLE(element);
                 ASSERT(&element == static_cast<typename INBOUND::BaseElement*>(&(*(_current))));
-
+                printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::DeserializerImpl::Deserialized()->PID<%d><%d> calling _parent.Received(_current)\n", getpid(), gettid());
                 _parent.Received(_current);
 
                 _current.Release();
@@ -199,6 +202,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
             , _deserialiserImpl(*this, queueSize)
             , _channel(*this, std::forward<Args>(args)...)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::LinkType(q,arg)>PID<%d><%d> Constructor \n", getpid(), gettid());
         }
 
         template <typename... Args>
@@ -207,6 +211,7 @@ PUSH_WARNING(DISABLE_WARNING_THIS_IN_MEMBER_INITIALIZER_LIST)
             , _deserialiserImpl(*this, responseAllocator)
             , _channel(*this, std::forward<Args>(args)...)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::LinkType(q,responseAllocator,arg)>PID<%d><%d> Constructor \n", getpid(), gettid());
         }
 POP_WARNING()
 
@@ -241,7 +246,7 @@ POP_WARNING()
         // Submit an OUTBOUND object into the channel
         bool Submit(const Core::ProxyType<OUTBOUND>& element)
         {
-            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::Submit()->PID<%d> \n", getpid());
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::Submit()->PID<%d><%d> \n", getpid(), gettid());
             if (_channel.IsOpen() == true) {
                 _serializerImpl.Submit(element);
             }
@@ -250,10 +255,12 @@ POP_WARNING()
         }
         inline uint32_t Open(const uint32_t waitTime)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::Open()>PID<%d><%d> calling _channel.Open(waitTime) \n", getpid(), gettid());
             return (_channel.Open(waitTime));
         }
         inline uint32_t Close(const uint32_t waitTime)
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::Close()>PID<%d><%d> calling _channel.Close(waitTime) \n", getpid(), gettid());
             return (_channel.Close(waitTime));
         }
         inline bool IsOpen() const
@@ -272,6 +279,7 @@ POP_WARNING()
     private:
         inline void Trigger()
         {
+            printf("WPEFramework::Core::LinkType<LINK, INBOUND, OUTBOUND, ALLOCATOR>::Trigger()>PID<%d><%d> calling _channel.Trigger() \n", getpid(), gettid());
             _channel.Trigger();
         }
         uint16_t SendData(uint8_t* dataFrame, const uint16_t maxSendSize)

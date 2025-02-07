@@ -148,6 +148,7 @@ namespace ProxyStub {
             , _channel(channel)
             , _remoteReferences(1)
         {
+            printf("WPEFramework::ProxyStub::UnknownProxy::UnknownProxy()->PID<%d><%d>interfaceId<%d>\n", getpid(), gettid(), interfaceId);
         }
         virtual ~UnknownProxy() = default;
 
@@ -167,7 +168,7 @@ namespace ProxyStub {
         void* Acquire(const bool outbound, const uint32_t id) {
 
             void* result = nullptr;
-
+            printf("WPEFramework::ProxyStub::UnknownProxy::Acquire()->PID<%d><%d>id<%d>\n", getpid(), gettid(), id);
             _adminLock.Lock();
 
             if (_refCount > 1) {
@@ -216,7 +217,7 @@ namespace ProxyStub {
             else {
                 if ((_channel.IsValid() == true) && ((_mode & (CACHING_RELEASE|CACHING_ADDREF)) == 0)) {
 
-                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> We have reached 0, signal the other side\n", getpid(), gettid());
+                    printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> We have reached 1, signal the other side\n", getpid(), gettid());
                     // We have reached "0", signal the other side..
                     Core::ProxyType<RPC::InvokeMessage> message(RPC::Administrator::Instance().Message());
                     printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling message->Parameters().Set(_implementation, _interfaceId, 1) \n", getpid(), gettid());
@@ -235,7 +236,7 @@ namespace ProxyStub {
                         result |= COM_ERROR;
                     }
                     else {
-                        printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> calling _channel->Invoke(message, RPC::CommunicationTimeOut) \n", getpid(), gettid());
+                        printf("WPEFramework::ProxyStub::UnknownProxy::Release()->PID<%d><%d> Pass the remote release return value through \n", getpid(), gettid());
                         // Pass the remote release return value through
                         result = message->Response().Reader().Number<uint32_t>();
                     }
@@ -331,7 +332,7 @@ namespace ProxyStub {
             _adminLock.Lock();
 	    Core::ProxyType<Core::IPCChannel> channel (_channel);
             _adminLock.Unlock();
-            printf("WPEFramework::ProxyStub::UnknownProxy::Message()->PID<%d><%d>calling channel->Invoke(message, waitTime)\n", getpid(), gettid());    
+            printf("WPEFramework::ProxyStub::UnknownProxy::Invoke(()->PID<%d><%d>calling channel->Invoke(message, waitTime)\n", getpid(), gettid());    
             if (channel.IsValid() == true) {
 	            result = channel->Invoke(message, waitTime);
 	
@@ -536,17 +537,17 @@ namespace ProxyStub {
 
             printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface()->PID<%d><%d>interfaceNumber<%d>\n", getpid(), gettid(), interfaceNumber);
             if (interfaceNumber == INTERFACE::ID) {
-                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(INTERFACE::ID)->PID<%d><%d>calling _unknown.AddRef()\n", getpid(), gettid());
+                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(interfaceNumber)->PID<%d><%d>calling _unknown.AddRef()\n", getpid(), gettid());
                 // Just AddRef and return..
                 _unknown.AddRef();
                 result = static_cast<INTERFACE*>(this);
             } else if (interfaceNumber == Core::IUnknown::ID) {
-                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(Core::IUnknown::ID)->PID<%d><%d>calling _unknown.AddRef()\n", getpid(), gettid());
+                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(interfaceNumber)->PID<%d><%d>calling _unknown.AddRef()\n", getpid(), gettid());
                 // Just AddRef and return..
                 _unknown.AddRef();
                 result = static_cast<Core::IUnknown*>(this);
             } else {
-                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(Core::IUnknown::ID)->PID<%d><%d>calling _unknown.RemoteInterface(interfaceNumber)\n", getpid(), gettid());
+                printf("WPEFramework::ProxyStub::UnknownProxyType<INTERFACE>::QueryInterface(interfaceNumber)->PID<%d><%d>calling _unknown.RemoteInterface(interfaceNumber)\n", getpid(), gettid());
                 result = _unknown.RemoteInterface(interfaceNumber);
             }
 
